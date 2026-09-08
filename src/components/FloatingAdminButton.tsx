@@ -38,16 +38,16 @@ export const FloatingAdminButton: React.FC<FloatingAdminButtonProps> = ({
   return (
     <aside
       aria-label="Acceso flotante exclusivo Staff FIRME STUDIO"
-      className="fixed bottom-6 left-6 z-40 sm:bottom-8 sm:left-8 select-none"
+      className="fixed bottom-6 left-6 z-50 sm:bottom-8 sm:left-8 select-none"
     >
       <button
         type="button"
         id="floating-admin-btn"
         onClick={handleClick}
-        className={`group relative flex items-center gap-2.5 px-4 py-2.5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border ${
+        className={`group relative flex items-center gap-2.5 px-4.5 py-3 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer border-2 ${
           isAdminActive
-            ? 'bg-[#B5654A] text-white border-white/30 hover:bg-[#9A5340]'
-            : 'bg-[#1A1815]/95 backdrop-blur-md text-[#FAF8F5] border-[#B5654A]/50 hover:border-[#B5654A] hover:shadow-[#B5654A]/25'
+            ? 'bg-[#B5654A] text-white border-white/40 hover:bg-[#9A5340]'
+            : 'bg-[#1A1815] text-[#FAF8F5] border-[#B5654A] hover:border-[#D49581] hover:shadow-[#B5654A]/30'
         }`}
         title={
           isAdminActive

@@ -162,12 +162,12 @@ export const AiAssistantWidget: React.FC<AiAssistantWidgetProps> = ({
 
   return (
     <>
-      {/* Floating Trigger Pill Button */}
+      {/* Floating Trigger Pill Button (Ubicado encima del botón de WhatsApp para evitar superposición) */}
       {!isOpen && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-40 bg-[#1A1815] hover:bg-[#B5654A] text-[#FAF8F5] px-4 py-3 rounded-full shadow-2xl border border-amber-900/40 flex items-center gap-2.5 transition-all duration-300 hover:scale-105 group cursor-pointer"
+          className="fixed bottom-22 right-6 z-40 bg-[#1A1815] hover:bg-[#B5654A] text-[#FAF8F5] px-4 py-2.5 rounded-full shadow-2xl border border-[#B5654A]/40 hover:border-[#B5654A] flex items-center gap-2.5 transition-all duration-300 hover:scale-105 group cursor-pointer"
           title="Abrir Asistente Virtual de FIRME STUDIO"
         >
           <div className="relative">

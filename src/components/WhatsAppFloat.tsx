@@ -27,7 +27,7 @@ export const WhatsAppFloat: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+    <div className={`fixed bottom-6 right-6 ${isOpen ? 'z-50' : 'z-40'} flex flex-col items-end`}>
       {/* Quick Chat Popup Card */}
       {isOpen && (
         <div

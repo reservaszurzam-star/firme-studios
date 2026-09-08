@@ -303,7 +303,7 @@ export default function App() {
       try {
         const parsed = JSON.parse(saved);
         if (!parsed.role) {
-          const { role, roleTitle } = determineUserRole(parsed.name, parsed.email);
+          const { role, roleTitle } = determineUserRole(parsed.name, parsed.email, parsed.dni);
           parsed.role = role;
           parsed.roleTitle = roleTitle;
         }
