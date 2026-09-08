@@ -315,6 +315,7 @@ export default function App() {
   });
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const [isGoogleAuthOpen, setIsGoogleAuthOpen] = useState(false);
+  const [authInitialModality, setAuthInitialModality] = useState<'qr' | 'manual' | 'whatsapp' | 'receptionist' | 'register' | 'login'>('manual');
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
   const [isKioskModalOpen, setIsKioskModalOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -473,8 +474,13 @@ export default function App() {
               status: 'activo',
               joinDate: new Date().toLocaleDateString('es-PE'),
               lastVisit: 'Recién registrado',
-              medicalNotes: userWithExp.healthConditions?.join(', ') || '',
-              emergencyContact: '',
+              emergencyContact: userWithExp.emergencyContact || '',
+              emergencyPhone: userWithExp.emergencyPhone || '',
+              medicalNotes: userWithExp.healthConditions?.join(', ') || userWithExp.medicalNotes || '',
+              documentType: userWithExp.documentType || 'dni',
+              birthDate: userWithExp.birthDate,
+              gender: userWithExp.gender,
+              registrationMethod: userWithExp.registrationMethod || 'manual_smartfit',
             };
             return [newClient, ...prev];
           }
@@ -553,11 +559,19 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash === 'registro') {
+      if (hash === 'registro' || hash === 'registro-smartfit') {
+        setAuthInitialModality('manual');
         setIsGoogleAuthOpen(true);
         setAuthPurpose('crear tu cuenta en FIRME STUDIO');
-      } else if (hash === 'qr') {
-        setIsQrModalOpen(true);
+      } else if (hash === 'qr' || hash === 'registro-qr') {
+        setAuthInitialModality('qr');
+        setIsGoogleAuthOpen(true);
+      } else if (hash === 'registro-whatsapp' || hash === 'whatsapp') {
+        setAuthInitialModality('whatsapp');
+        setIsGoogleAuthOpen(true);
+      } else if (hash === 'registro-presencial' || hash === 'counter') {
+        setAuthInitialModality('receptionist');
+        setIsGoogleAuthOpen(true);
       } else if (hash === 'admin') {
         const savedUserStr = localStorage.getItem('firme_auth_user');
         if (savedUserStr) {
@@ -1692,7 +1706,7 @@ export default function App() {
         onPerformCheckIn={handlePerformCheckIn}
       />
 
-      {/* GOOGLE SIGN-IN / ACCOUNT SELECTOR SIMULADO & REGISTRO */}
+      {/* CENTRO UNIFICADO DE REGISTRO & ACCESO 4-EN-1 (QR, SMARTFIT, WHATSAPP, COUNTER) */}
       <GoogleAuthModal
         isOpen={isGoogleAuthOpen}
         onClose={() => {
@@ -1702,6 +1716,7 @@ export default function App() {
         }}
         onSuccess={handleGoogleAuthSuccess}
         purpose={authPurpose}
+        initialMode={authInitialModality}
       />
 
       {/* SIMULADOR DE CHECKOUT & PAGO DE PLAN */}
@@ -1735,6 +1750,11 @@ export default function App() {
         }}
         onGainExp={handleGainExp}
         onOpenQrModal={() => setIsQrModalOpen(true)}
+        onOpenAuthModal={(modality) => {
+          setIsKioskModalOpen(false);
+          setAuthInitialModality(modality || 'manual');
+          setIsGoogleAuthOpen(true);
+        }}
       />
 
       {/* MODAL DE CÓDIGO QR Y ENLACE ÚNICO DE REGISTRO PARA MOSTRADOR */}

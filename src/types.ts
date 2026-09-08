@@ -99,7 +99,12 @@ export interface ClientProfile {
   joinDate: string;
   lastVisit: string;
   emergencyContact?: string;
+  emergencyPhone?: string;
   medicalNotes?: string;
+  documentType?: 'dni' | 'ce' | 'pasaporte';
+  birthDate?: string;
+  gender?: 'femenino' | 'masculino' | 'otro';
+  registrationMethod?: 'qr' | 'manual_smartfit' | 'whatsapp' | 'receptionist_desk';
 }
 
 export type PaymentMethod =
@@ -314,6 +319,10 @@ export interface AuthUser {
   medicalNotes?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
+  documentType?: 'dni' | 'ce' | 'pasaporte';
+  birthDate?: string;
+  gender?: 'femenino' | 'masculino' | 'otro';
+  registrationMethod?: 'qr' | 'manual_smartfit' | 'whatsapp' | 'receptionist_desk';
   planName?: string;
   creditsLeft?: number;
   totalAttended?: number;

@@ -105,7 +105,12 @@ export function mapDbClientToProfile(row: any): ClientProfile {
     joinDate: row.join_date ? new Date(row.join_date).toLocaleDateString('es-PE') : '01/01/2026',
     lastVisit: row.last_visit ? new Date(row.last_visit).toLocaleDateString('es-PE') : 'Nunca',
     emergencyContact: row.emergency_contact,
+    emergencyPhone: row.emergency_phone,
     medicalNotes: row.medical_notes,
+    documentType: row.document_type || 'dni',
+    birthDate: row.birth_date,
+    gender: row.gender || 'otro',
+    registrationMethod: row.registration_method || 'manual_smartfit',
   };
 }
 
@@ -366,11 +371,24 @@ export const supabaseService = {
     email: string,
     password: string,
     name: string,
-    phone?: string
+    phone?: string,
+    extraProfile?: {
+      dni?: string;
+      documentType?: 'dni' | 'ce' | 'pasaporte';
+      birthDate?: string;
+      gender?: 'femenino' | 'masculino' | 'otro';
+      emergencyContact?: string;
+      emergencyPhone?: string;
+      medicalNotes?: string;
+      registrationMethod?: 'qr' | 'manual_smartfit' | 'whatsapp' | 'receptionist_desk';
+      planName?: string;
+      creditsLeft?: number;
+    }
   ): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
     if (!supabase) return { success: false, error: 'Servicio Supabase no inicializado' };
     try {
       const trimmedEmail = email.trim().toLowerCase();
+      const trimmedDni = (extraProfile?.dni || '').trim() || '70000000';
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password: password,
@@ -378,6 +396,14 @@ export const supabaseService = {
           data: {
             name: name.trim(),
             phone: phone?.trim() || '',
+            dni: trimmedDni,
+            document_type: extraProfile?.documentType || 'dni',
+            birth_date: extraProfile?.birthDate || '',
+            gender: extraProfile?.gender || 'otro',
+            emergency_contact: extraProfile?.emergencyContact || '',
+            emergency_phone: extraProfile?.emergencyPhone || '',
+            medical_notes: extraProfile?.medicalNotes || '',
+            registration_method: extraProfile?.registrationMethod || 'manual_smartfit',
           },
         },
       });
@@ -396,11 +422,18 @@ export const supabaseService = {
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=B5654A&color=fff`,
         provider: 'manual',
         phone: phone?.trim() || '+51 900 000 000',
-        dni: '70000000',
-        planName: role === 'client' ? 'Alumna Registrada' : roleTitle,
-        creditsLeft: role === 'client' ? 0 : 99,
+        dni: trimmedDni,
+        documentType: extraProfile?.documentType || 'dni',
+        birthDate: extraProfile?.birthDate,
+        gender: extraProfile?.gender,
+        emergencyContact: extraProfile?.emergencyContact,
+        emergencyPhone: extraProfile?.emergencyPhone,
+        medicalNotes: extraProfile?.medicalNotes,
+        registrationMethod: extraProfile?.registrationMethod || 'manual_smartfit',
+        planName: extraProfile?.planName || (role === 'client' ? 'Alumna Registrada' : roleTitle),
+        creditsLeft: extraProfile?.creditsLeft ?? (role === 'client' ? 0 : 99),
         experienceLevel: 'Principiante',
-        healthConditions: ['Ninguna'],
+        healthConditions: extraProfile?.medicalNotes ? [extraProfile.medicalNotes] : ['Ninguna'],
       };
 
       // Registrar también en tabla public.clients si es alumna
@@ -411,11 +444,18 @@ export const supabaseService = {
               name: authUser.name,
               email: authUser.email,
               phone: authUser.phone,
-              dni: authUser.dni || '70000000',
-              current_plan: 'Alumna Registrada',
-              plan_type: 'pack',
-              credits_left: 0,
+              dni: authUser.dni,
+              current_plan: authUser.planName,
+              plan_type: authUser.planName?.toLowerCase().includes('ilimitad') ? 'ilimitado' : 'pack',
+              credits_left: authUser.creditsLeft ?? 0,
               status: 'activo',
+              emergency_contact: authUser.emergencyContact,
+              emergency_phone: authUser.emergencyPhone,
+              medical_notes: authUser.medicalNotes,
+              document_type: authUser.documentType,
+              birth_date: authUser.birthDate,
+              gender: authUser.gender,
+              registration_method: authUser.registrationMethod,
             },
             { onConflict: 'dni' }
           );
@@ -431,14 +471,60 @@ export const supabaseService = {
   },
 
   async signInWithPassword(
-    email: string,
+    identifier: string,
     password: string
   ): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
     if (!supabase) return { success: false, error: 'Servicio Supabase no inicializado' };
     try {
-      const trimmedEmail = email.trim().toLowerCase();
+      let resolvedEmail = identifier.trim().toLowerCase();
+      const isEmail = identifier.includes('@');
+
+      // Si ingresó DNI o Documento, resolver correo asociado
+      if (!isEmail) {
+        const cleanDni = identifier.trim();
+        try {
+          const { data: clientRow } = await supabase
+            .from('clients')
+            .select('email, name, phone, dni')
+            .eq('dni', cleanDni)
+            .limit(1)
+            .maybeSingle();
+
+          if (clientRow?.email) {
+            resolvedEmail = clientRow.email.toLowerCase();
+          }
+        } catch {
+          // fallback
+        }
+
+        // Buscar también en memoria / local users
+        if (!resolvedEmail.includes('@')) {
+          try {
+            const storedUsersRaw = localStorage.getItem('firme_registered_users');
+            if (storedUsersRaw) {
+              const stored = JSON.parse(storedUsersRaw);
+              const found = stored.find(
+                (u: any) => u.dni === cleanDni || (u.email && u.email.toLowerCase() === identifier.toLowerCase())
+              );
+              if (found && found.email) {
+                resolvedEmail = found.email.toLowerCase();
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      if (!resolvedEmail.includes('@')) {
+        return {
+          success: false,
+          error: 'No encontramos ninguna cuenta vinculada al DNI ' + identifier + '. Regístrate o ingresa con tu correo.',
+        };
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
+        email: resolvedEmail,
         password: password,
       });
 
@@ -447,20 +533,27 @@ export const supabaseService = {
       }
 
       const userMeta = data.user?.user_metadata || {};
-      const rawName = userMeta.name || trimmedEmail.split('@')[0];
+      const rawName = userMeta.name || resolvedEmail.split('@')[0];
       const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-      const { role, roleTitle } = determineUserRole(formattedName, trimmedEmail);
+      const { role, roleTitle } = determineUserRole(formattedName, resolvedEmail);
 
       const authUser: AuthUser = {
         id: data.user?.id || `usr-${Date.now()}`,
         name: formattedName,
-        email: trimmedEmail,
+        email: resolvedEmail,
         role,
         roleTitle,
         avatar: userMeta.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(formattedName)}&background=B5654A&color=fff`,
         provider: 'manual',
         phone: userMeta.phone || '+51 900 000 000',
-        dni: userMeta.dni || '70000000',
+        dni: userMeta.dni || identifier.trim(),
+        documentType: userMeta.document_type || 'dni',
+        birthDate: userMeta.birth_date,
+        gender: userMeta.gender,
+        emergencyContact: userMeta.emergency_contact,
+        emergencyPhone: userMeta.emergency_phone,
+        medicalNotes: userMeta.medical_notes,
+        registrationMethod: userMeta.registration_method,
         planName: role === 'client' ? 'Alumna Registrada' : roleTitle,
         creditsLeft: role === 'client' ? 0 : 99,
         experienceLevel: 'Principiante',
@@ -493,6 +586,13 @@ export const supabaseService = {
       provider: user.app_metadata?.provider === 'google' ? 'google' : 'manual',
       phone: userMeta.phone || '+51 900 000 000',
       dni: userMeta.dni || '70000000',
+      documentType: userMeta.document_type || 'dni',
+      birthDate: userMeta.birth_date,
+      gender: userMeta.gender,
+      emergencyContact: userMeta.emergency_contact,
+      emergencyPhone: userMeta.emergency_phone,
+      medicalNotes: userMeta.medical_notes,
+      registrationMethod: userMeta.registration_method,
       planName: role === 'client' ? 'Alumna Registrada' : roleTitle,
       creditsLeft: role === 'client' ? 0 : 99,
       experienceLevel: 'Principiante',

@@ -114,20 +114,20 @@ export const ClientCheckInModal: React.FC<ClientCheckInModalProps> = ({
 
               <div>
                 <h3 className="font-fraunces text-lg text-[#1A1815] font-medium">
-                  Crear cuenta o ingresar con Gmail
+                  Crear cuenta o Iniciar Sesión
                 </h3>
                 <p className="text-xs text-[#6B655C] max-w-xs mx-auto mt-0.5">
-                  Autenticación en 1 solo clic. Guarda tus reservas, nivel postural y créditos mensuales.
+                  Disponible por QR, Formulario SmartFit (DNI), WhatsApp Concierge o en Recepción.
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={onOpenGoogleAuth}
-                className="w-full bg-white hover:bg-[#FAF8F5] border border-[#DDD5C9] hover:border-[#B5654A] py-3 px-4 rounded-lg font-medium text-sm text-[#1A1815] shadow-xs flex items-center justify-center space-x-2 transition-all cursor-pointer"
+                className="w-full bg-[#B5654A] hover:bg-[#9A5340] text-white py-3 px-4 rounded-xl font-medium text-xs sm:text-sm shadow-xs flex items-center justify-center space-x-2 transition-all cursor-pointer"
               >
-                <span>Continuar con Google</span>
-                <ArrowRight className="w-4 h-4 text-[#B5654A]" />
+                <span>Elegir Modalidad de Registro / Acceso</span>
+                <ArrowRight className="w-4 h-4 text-white" />
               </button>
             </div>
 

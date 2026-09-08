@@ -8,6 +8,7 @@ import {
   Delete,
   AlertCircle,
   QrCode,
+  UserCheck,
 } from 'lucide-react';
 import { BookingRecord, ClientProfile } from '../types';
 import { supabaseService } from '../services/supabaseService';
@@ -21,6 +22,7 @@ interface ReceptionKioskModalProps {
   onCheckInSuccess?: (booking: BookingRecord) => void;
   onGainExp?: (amount: number, reason: string) => void;
   onOpenQrModal?: () => void;
+  onOpenAuthModal?: (modality?: 'qr' | 'manual' | 'whatsapp' | 'receptionist') => void;
 }
 
 export const ReceptionKioskModal: React.FC<ReceptionKioskModalProps> = ({
@@ -31,6 +33,7 @@ export const ReceptionKioskModal: React.FC<ReceptionKioskModalProps> = ({
   onCheckInSuccess,
   onGainExp,
   onOpenQrModal,
+  onOpenAuthModal,
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
@@ -362,19 +365,33 @@ export const ReceptionKioskModal: React.FC<ReceptionKioskModalProps> = ({
                 <span>Validar Ingreso a Sala</span>
               </button>
 
-              {/* Botón para alumnas nuevas sin cuenta */}
-              {onOpenQrModal && (
-                <div className="pt-2 text-center">
+              {/* Opciones para alumnas nuevas sin cuenta previa */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                {(onOpenQrModal || onOpenAuthModal) && (
                   <button
                     type="button"
-                    onClick={onOpenQrModal}
-                    className="inline-flex items-center gap-2 text-xs font-semibold text-amber-300 hover:text-white transition-colors py-2 px-4 rounded-xl border border-amber-500/30 hover:border-amber-400 bg-[#332F2A]/60 cursor-pointer shadow-xs"
+                    onClick={() => {
+                      if (onOpenAuthModal) onOpenAuthModal('qr');
+                      else onOpenQrModal?.();
+                    }}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-amber-300 hover:text-white transition-colors py-2 px-3.5 rounded-xl border border-amber-500/30 hover:border-amber-400 bg-[#332F2A]/60 cursor-pointer shadow-xs"
                   >
-                    <QrCode className="w-4 h-4 text-[#B5654A]" />
-                    <span>¿Primera vez en el estudio? Ver QR de Registro para tu Celular</span>
+                    <QrCode className="w-3.5 h-3.5 text-[#B5654A]" />
+                    <span>Ver QR para tu Celular</span>
                   </button>
-                </div>
-              )}
+                )}
+
+                {onOpenAuthModal && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenAuthModal('receptionist')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-emerald-300 hover:text-white transition-colors py-2 px-3.5 rounded-xl border border-emerald-500/30 hover:border-emerald-400 bg-[#332F2A]/60 cursor-pointer shadow-xs"
+                  >
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Registro en Counter con Recepcionista</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ) : (
