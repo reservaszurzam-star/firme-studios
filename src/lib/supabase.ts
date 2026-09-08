@@ -14,8 +14,11 @@ const getEnvVar = (key: string): string => {
   return '';
 };
 
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || getEnvVar('SUPABASE_URL') || '';
-const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('SUPABASE_ANON_KEY') || '';
+const DEFAULT_URL = 'https://wcxwnbuwugzsedmkohmt.supabase.co';
+const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjeHduYnV3dWd6c2VkbWtvaG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1Njc0MTAsImV4cCI6MjEwNDE0MzQxMH0.4Xzt5VWr31PFoLFas6Mj5TKWR-2EyJTXRNrV-CnvRSA';
+
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || getEnvVar('SUPABASE_URL') || DEFAULT_URL;
+const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('SUPABASE_ANON_KEY') || DEFAULT_KEY;
 
 export const isSupabaseConfigured = (): boolean => {
   return Boolean(

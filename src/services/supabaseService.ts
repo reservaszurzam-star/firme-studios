@@ -5,6 +5,8 @@ import {
   ClientProfile,
   CashTransaction,
   LeadRecord,
+  AuthUser,
+  determineUserRole,
 } from '../types';
 import { MOCK_CLASSES } from '../data/mockData';
 import {
@@ -354,5 +356,210 @@ export const supabaseService = {
     return () => {
       supabase.removeChannel(channel);
     };
+  },
+
+  // =========================================================================
+  // 7. AUTENTICACIÓN REAL (SUPABASE AUTH & POSTGRES)
+  // =========================================================================
+
+  async signUpWithPassword(
+    email: string,
+    password: string,
+    name: string,
+    phone?: string
+  ): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    if (!supabase) return { success: false, error: 'Servicio Supabase no inicializado' };
+    try {
+      const trimmedEmail = email.trim().toLowerCase();
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password: password,
+        options: {
+          data: {
+            name: name.trim(),
+            phone: phone?.trim() || '',
+          },
+        },
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      const { role, roleTitle } = determineUserRole(name, trimmedEmail);
+      const authUser: AuthUser = {
+        id: data.user?.id || `usr-${Date.now()}`,
+        name: name.trim(),
+        email: trimmedEmail,
+        role,
+        roleTitle,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=B5654A&color=fff`,
+        provider: 'manual',
+        phone: phone?.trim() || '+51 900 000 000',
+        dni: '70000000',
+        planName: role === 'client' ? 'Alumna Registrada' : roleTitle,
+        creditsLeft: role === 'client' ? 0 : 99,
+        experienceLevel: 'Principiante',
+        healthConditions: ['Ninguna'],
+      };
+
+      // Registrar también en tabla public.clients si es alumna
+      if (role === 'client') {
+        try {
+          await supabase.from('clients').upsert(
+            {
+              name: authUser.name,
+              email: authUser.email,
+              phone: authUser.phone,
+              dni: authUser.dni || '70000000',
+              current_plan: 'Alumna Registrada',
+              plan_type: 'pack',
+              credits_left: 0,
+              status: 'activo',
+            },
+            { onConflict: 'dni' }
+          );
+        } catch {
+          // ignore
+        }
+      }
+
+      return { success: true, user: authUser };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Error al registrar cuenta' };
+    }
+  },
+
+  async signInWithPassword(
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+    if (!supabase) return { success: false, error: 'Servicio Supabase no inicializado' };
+    try {
+      const trimmedEmail = email.trim().toLowerCase();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password: password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      const userMeta = data.user?.user_metadata || {};
+      const rawName = userMeta.name || trimmedEmail.split('@')[0];
+      const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+      const { role, roleTitle } = determineUserRole(formattedName, trimmedEmail);
+
+      const authUser: AuthUser = {
+        id: data.user?.id || `usr-${Date.now()}`,
+        name: formattedName,
+        email: trimmedEmail,
+        role,
+        roleTitle,
+        avatar: userMeta.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(formattedName)}&background=B5654A&color=fff`,
+        provider: 'manual',
+        phone: userMeta.phone || '+51 900 000 000',
+        dni: userMeta.dni || '70000000',
+        planName: role === 'client' ? 'Alumna Registrada' : roleTitle,
+        creditsLeft: role === 'client' ? 0 : 99,
+        experienceLevel: 'Principiante',
+        healthConditions: ['Ninguna'],
+      };
+
+      return { success: true, user: authUser };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Error al iniciar sesión' };
+    }
+  },
+
+  mapSupabaseUserToAuthUser(user: any): AuthUser {
+    const userMeta = user.user_metadata || {};
+    const email = (user.email || '').trim().toLowerCase();
+    const rawName = (userMeta.full_name || userMeta.name || email.split('@')[0] || 'Alumna').trim();
+    const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+    const { role, roleTitle } = determineUserRole(formattedName, email);
+
+    return {
+      id: user.id || `usr-${Date.now()}`,
+      name: formattedName,
+      email: email,
+      role,
+      roleTitle,
+      avatar:
+        userMeta.avatar_url ||
+        userMeta.picture ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(formattedName)}&background=B5654A&color=fff`,
+      provider: user.app_metadata?.provider === 'google' ? 'google' : 'manual',
+      phone: userMeta.phone || '+51 900 000 000',
+      dni: userMeta.dni || '70000000',
+      planName: role === 'client' ? 'Alumna Registrada' : roleTitle,
+      creditsLeft: role === 'client' ? 0 : 99,
+      experienceLevel: 'Principiante',
+      healthConditions: ['Ninguna'],
+    };
+  },
+
+  async getCurrentSessionUser(): Promise<AuthUser | null> {
+    if (!supabase) return null;
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) return null;
+      return this.mapSupabaseUserToAuthUser(session.user);
+    } catch {
+      return null;
+    }
+  },
+
+  onAuthStateChange(callback: (user: AuthUser | null) => void): () => void {
+    if (!supabase) return () => {};
+    try {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((event, session) => {
+        if (
+          session?.user &&
+          (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED')
+        ) {
+          const authUser = this.mapSupabaseUserToAuthUser(session.user);
+          callback(authUser);
+        } else if (event === 'SIGNED_OUT') {
+          callback(null);
+        }
+      });
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch {
+      return () => {};
+    }
+  },
+
+  async signInWithGoogle(): Promise<{ error?: string }> {
+    if (!supabase) return { error: 'Servicio Supabase no inicializado' };
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) return { error: error.message };
+      return {};
+    } catch (err: any) {
+      return { error: err.message || 'Error al conectar con Google' };
+    }
+  },
+
+  async signOut(): Promise<void> {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // ignore
+      }
+    }
   },
 };

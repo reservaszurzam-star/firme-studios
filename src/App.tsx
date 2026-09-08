@@ -245,7 +245,33 @@ export default function App() {
           setBookingsList(bks);
         }
       });
+
+      // Sincronizar sesión activa de Supabase (retorno de Google OAuth o sesión persistida)
+      supabaseService.getCurrentSessionUser().then((user) => {
+        if (!isMounted || !user) return;
+        setCurrentUser((prev) => {
+          if (!prev || prev.id !== user.id) {
+            localStorage.setItem('firme_auth_user', JSON.stringify(user));
+            return user;
+          }
+          return prev;
+        });
+      });
     }
+
+    // Listener reactivo a cambios de sesión Supabase (Google OAuth o email)
+    const authUnsubscribe = supabaseService.onAuthStateChange((user) => {
+      if (!isMounted) return;
+      if (user) {
+        setCurrentUser(user);
+        localStorage.setItem('firme_auth_user', JSON.stringify(user));
+        if (user.role === 'owner_dev' || user.role === 'admin') {
+          sessionStorage.setItem('firme_admin_logged', 'true');
+        } else {
+          sessionStorage.removeItem('firme_admin_logged');
+        }
+      }
+    });
 
     // Suscripción Realtime a reservas (Tótem SJL y nuevas reservas)
     const unsubscribe = supabaseService.subscribeToBookings(({ newRecord }) => {
@@ -264,6 +290,7 @@ export default function App() {
     return () => {
       isMounted = false;
       unsubscribe();
+      authUnsubscribe();
     };
   }, []);
 
@@ -479,7 +506,12 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabaseService.signOut();
+    } catch {
+      // ignore
+    }
     setCurrentUser(null);
     localStorage.removeItem('firme_auth_user');
     sessionStorage.removeItem('firme_admin_logged');
@@ -1352,7 +1384,14 @@ export default function App() {
         onSelectTab={handleSelectTab}
         bookedCount={bookedClasses.length}
         currentUser={currentUser}
-        onOpenCheckInModal={() => setIsCheckInModalOpen(true)}
+        onOpenCheckInModal={() => {
+          if (!currentUser) {
+            setAuthPurpose('acceder a tu cuenta de alumna');
+            setIsGoogleAuthOpen(true);
+          } else {
+            setIsCheckInModalOpen(true);
+          }
+        }}
         onOpenGoogleAuth={() => setIsGoogleAuthOpen(true)}
         onOpenLevelModal={() => handleSelectTab('niveles')}
         onOpenKioskModal={() => setIsKioskModalOpen(true)}
