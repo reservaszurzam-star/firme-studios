@@ -1,0 +1,358 @@
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import {
+  ClassSession,
+  BookingRecord,
+  ClientProfile,
+  CashTransaction,
+  LeadRecord,
+} from '../types';
+import { MOCK_CLASSES } from '../data/mockData';
+import {
+  INITIAL_CLIENTS,
+  INITIAL_TRANSACTIONS,
+  INITIAL_LEADS,
+} from '../data/adminMockData';
+
+// Helper para convertir nombres snake_case de Postgres a camelCase de TypeScript
+export function mapDbClassToSession(row: any): ClassSession {
+  return {
+    id: row.id,
+    day: row.day,
+    time: row.time,
+    name: row.name,
+    instructor: row.instructor,
+    level: row.level,
+    classType: row.class_type,
+    duration: row.duration || '50 min',
+    totalSpots: row.total_spots ?? 8,
+    occupiedSpots: row.occupied_spots ?? 0,
+    focus: row.focus || '',
+  };
+}
+
+export function mapSessionToDbClass(cls: ClassSession): any {
+  return {
+    id: cls.id,
+    day: cls.day,
+    time: cls.time,
+    name: cls.name,
+    instructor: cls.instructor,
+    level: cls.level,
+    class_type: cls.classType,
+    duration: cls.duration,
+    total_spots: cls.totalSpots,
+    occupied_spots: cls.occupiedSpots,
+    focus: cls.focus,
+  };
+}
+
+export function mapDbBookingToRecord(row: any): BookingRecord {
+  return {
+    id: row.id,
+    classId: row.class_id,
+    className: row.class_name,
+    classTime: row.class_time,
+    classDay: row.class_day,
+    instructor: row.instructor,
+    clientName: row.client_name,
+    clientEmail: row.client_email || '',
+    clientPhone: row.client_phone || '',
+    clientDni: row.client_dni || '',
+    status: row.status,
+    bookedAt: row.booked_at ? new Date(row.booked_at).toLocaleDateString('es-PE') : 'Hoy',
+    bedNumber: row.bed_number ?? undefined,
+    isWaitlist: row.is_waitlist ?? false,
+    medicalAlert: row.medical_alert ?? undefined,
+    checkInTime: row.check_in_time ?? undefined,
+    whatsappReminderSent: row.whatsapp_reminder_sent ?? false,
+  };
+}
+
+export function mapRecordToDbBooking(b: Partial<BookingRecord>): any {
+  return {
+    id: b.id,
+    class_id: b.classId,
+    class_name: b.className,
+    class_time: b.classTime,
+    class_day: b.classDay,
+    instructor: b.instructor,
+    client_name: b.clientName,
+    client_email: b.clientEmail,
+    client_phone: b.clientPhone,
+    client_dni: b.clientDni,
+    status: b.status || 'confirmada',
+    bed_number: b.bedNumber,
+    is_waitlist: b.isWaitlist || false,
+    medical_alert: b.medicalAlert,
+    check_in_time: b.checkInTime,
+  };
+}
+
+export function mapDbClientToProfile(row: any): ClientProfile {
+  return {
+    id: row.id,
+    name: row.name,
+    dni: row.dni,
+    phone: row.phone,
+    email: row.email || '',
+    currentPlan: row.current_plan || 'Pack 8 Sesiones',
+    planType: row.plan_type || 'pack',
+    creditsLeft: row.credits_left ?? 8,
+    totalAttended: row.total_attended ?? 0,
+    status: row.status || 'activo',
+    joinDate: row.join_date ? new Date(row.join_date).toLocaleDateString('es-PE') : '01/01/2026',
+    lastVisit: row.last_visit ? new Date(row.last_visit).toLocaleDateString('es-PE') : 'Nunca',
+    emergencyContact: row.emergency_contact,
+    medicalNotes: row.medical_notes,
+  };
+}
+
+export const supabaseService = {
+  // =========================================================================
+  // 1. CLASES & HORARIOS
+  // =========================================================================
+  async getClasses(): Promise<ClassSession[]> {
+    if (!isSupabaseConfigured() || !supabase) {
+      return MOCK_CLASSES;
+    }
+    try {
+      const { data, error } = await supabase.from('classes').select('*').order('time', { ascending: true });
+      if (error || !data || data.length === 0) {
+        return MOCK_CLASSES;
+      }
+      return data.map(mapDbClassToSession);
+    } catch {
+      return MOCK_CLASSES;
+    }
+  },
+
+  async updateClassSpots(classId: string, occupiedSpots: number): Promise<boolean> {
+    if (!isSupabaseConfigured() || !supabase) return true;
+    try {
+      const { error } = await supabase
+        .from('classes')
+        .update({ occupied_spots: occupiedSpots })
+        .eq('id', classId);
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  // =========================================================================
+  // 2. RESERVAS & ASISTENCIAS
+  // =========================================================================
+  async getBookings(): Promise<BookingRecord[]> {
+    if (!isSupabaseConfigured() || !supabase) return [];
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error || !data) return [];
+      return data.map(mapDbBookingToRecord);
+    } catch {
+      return [];
+    }
+  },
+
+  async createBooking(booking: Omit<BookingRecord, 'id' | 'bookedAt' | 'status'>): Promise<BookingRecord | null> {
+    if (!isSupabaseConfigured() || !supabase) {
+      const fallback: BookingRecord = {
+        ...booking,
+        id: `b-${Date.now()}`,
+        status: 'confirmada',
+        bookedAt: new Date().toLocaleDateString('es-PE'),
+      };
+      return fallback;
+    }
+    try {
+      const dbRow = mapRecordToDbBooking({
+        ...booking,
+        id: `b-${Date.now()}`,
+        status: 'confirmada',
+      });
+      const { data, error } = await supabase.from('bookings').insert([dbRow]).select().single();
+      if (error || !data) {
+        console.warn('Error al insertar reserva en Supabase:', error);
+        return null;
+      }
+      return mapDbBookingToRecord(data);
+    } catch (err) {
+      console.error('Excepción al crear reserva en Supabase:', err);
+      return null;
+    }
+  },
+
+  // =========================================================================
+  // 3. TÓTEM SJL: AUTO CHECK-IN POR DNI EN TIEMPO REAL
+  // =========================================================================
+  async performTotemCheckIn(dni: string): Promise<{
+    success: boolean;
+    booking?: BookingRecord;
+    assignedBed?: number;
+    error?: string;
+  }> {
+    const trimmedDni = dni.trim();
+    const nowTime = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+
+    if (!isSupabaseConfigured() || !supabase) {
+      // Modo local simulado
+      return {
+        success: true,
+        assignedBed: Math.floor(Math.random() * 8) + 1,
+      };
+    }
+
+    try {
+      // 1. Buscar la reserva más reciente del DNI que esté confirmada
+      const { data: bookingRows, error: searchError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('client_dni', trimmedDni)
+        .neq('status', 'cancelada')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (searchError || !bookingRows || bookingRows.length === 0) {
+        return {
+          success: false,
+          error: `No encontramos reserva activa para el DNI ${trimmedDni}. Acércate al counter de recepción.`,
+        };
+      }
+
+      const currentBooking = bookingRows[0];
+
+      // 2. Determinar cama (si ya tiene cama asignada la conserva, sino asigna una del 1 al 8)
+      let chosenBed = currentBooking.bed_number;
+      if (!chosenBed) {
+        // Consultar qué camas de esta clase ya están ocupadas
+        const { data: occupiedBeds } = await supabase
+          .from('bookings')
+          .select('bed_number')
+          .eq('class_id', currentBooking.class_id)
+          .not('bed_number', 'is', null);
+
+        const usedSet = new Set((occupiedBeds || []).map((r) => r.bed_number));
+        for (let bed = 1; bed <= 8; bed++) {
+          if (!usedSet.has(bed)) {
+            chosenBed = bed;
+            break;
+          }
+        }
+        if (!chosenBed) chosenBed = 1;
+      }
+
+      // 3. Actualizar reserva a 'asistio' con la cama y hora exacta
+      const { data: updatedData, error: updateError } = await supabase
+        .from('bookings')
+        .update({
+          status: 'asistio',
+          bed_number: chosenBed,
+          check_in_time: nowTime,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', currentBooking.id)
+        .select()
+        .single();
+
+      if (updateError || !updatedData) {
+        return {
+          success: false,
+          error: 'Error al registrar tu check-in en el sistema. Por favor avisa a recepción.',
+        };
+      }
+
+      // 4. Sumar +150 EXP y +1 asistencia en la tabla clients
+      try {
+        const { data: clientRow } = await supabase
+          .from('clients')
+          .select('id, exp_points, total_attended')
+          .eq('dni', trimmedDni)
+          .single();
+
+        if (clientRow) {
+          await supabase
+            .from('clients')
+            .update({
+              exp_points: (clientRow.exp_points || 0) + 150,
+              total_attended: (clientRow.total_attended || 0) + 1,
+              last_visit: new Date().toISOString(),
+            })
+            .eq('id', clientRow.id);
+        }
+      } catch {
+        // Ignorar si el cliente no está en la tabla
+      }
+
+      return {
+        success: true,
+        booking: mapDbBookingToRecord(updatedData),
+        assignedBed: chosenBed,
+      };
+    } catch (err: any) {
+      console.error('Error en check-in de tótem:', err);
+      return {
+        success: false,
+        error: err.message || 'Error de conexión con el Tótem SJL.',
+      };
+    }
+  },
+
+  // =========================================================================
+  // 4. ASIGNACIÓN MANUAL DE CAMAS (REFORMER 1-8)
+  // =========================================================================
+  async assignBed(bookingId: string, bedNumber: number): Promise<boolean> {
+    if (!isSupabaseConfigured() || !supabase) return true;
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ bed_number: bedNumber, updated_at: new Date().toISOString() })
+        .eq('id', bookingId);
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  // =========================================================================
+  // 5. CLIENTES & EXP
+  // =========================================================================
+  async getClients(): Promise<ClientProfile[]> {
+    if (!isSupabaseConfigured() || !supabase) return INITIAL_CLIENTS;
+    try {
+      const { data, error } = await supabase.from('clients').select('*').order('name', { ascending: true });
+      if (error || !data || data.length === 0) return INITIAL_CLIENTS;
+      return data.map(mapDbClientToProfile);
+    } catch {
+      return INITIAL_CLIENTS;
+    }
+  },
+
+  // =========================================================================
+  // 6. REALTIME: SUSCRIPCIÓN EN VIVO A CHECK-INS Y RESERVAS
+  // =========================================================================
+  subscribeToBookings(onPayload: (payload: { eventType: string; newRecord: BookingRecord }) => void) {
+    if (!isSupabaseConfigured() || !supabase) return () => {};
+
+    const channel = supabase
+      .channel('realtime:bookings')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings' },
+        (payload: any) => {
+          if (payload.new) {
+            onPayload({
+              eventType: payload.eventType,
+              newRecord: mapDbBookingToRecord(payload.new),
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  },
+};

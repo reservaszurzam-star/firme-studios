@@ -1,0 +1,8 @@
+{
+  "name": "FIRME STUDIO",
+  "description": "FIRME STUDIO — Pilates Boutique en Lima - SJL. Reserva tus clases de Reformer, Mat y Suspensión.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
+
