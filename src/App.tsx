@@ -291,6 +291,13 @@ export default function App() {
   const [isKioskModalOpen, setIsKioskModalOpen] = useState(false);
   const [isBiomechanicsQuizOpen, setIsBiomechanicsQuizOpen] = useState(false);
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<PricingPlan | null>(null);
+  const [authPurpose, setAuthPurpose] = useState<string>('');
+  const [pendingBookingAction, setPendingBookingAction] = useState<{
+    type: 'class' | 'plan';
+    classSession?: ClassSession;
+    bookingType?: 'reserve' | 'waitlist';
+    plan?: PricingPlan;
+  } | null>(null);
 
   // Pre-seed an initial booking (e.g. c2) so the user immediately sees the 'Mis Clases' panel
   const [bookedClassIds, setBookedClassIds] = useState<Set<string>>(new Set(['c2']));
@@ -449,10 +456,27 @@ export default function App() {
       sessionStorage.setItem('firme_admin_logged', 'true');
     }
     setToast({
-      title: 'Sesión Conectada',
-      message: `Bienvenido/a, ${user.name} (${userWithExp.roleTitle || (userWithExp.role === 'client' ? 'Alumna' : 'Staff')}).`,
+      title: 'Sesión Iniciada Exitosamente',
+      message: `Bienvenido/a, ${user.name}. Continuando con tu gestión...`,
     });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), 3500);
+
+    // Reanudar automáticamente la reserva o compra pendiente si el usuario no estaba autenticado
+    if (pendingBookingAction) {
+      if (pendingBookingAction.type === 'class') {
+        const targetClass = pendingBookingAction.classSession || classesList[0];
+        if (targetClass) {
+          setBookingModalData({
+            classSession: targetClass,
+            type: pendingBookingAction.bookingType || 'reserve',
+          });
+        }
+      } else if (pendingBookingAction.type === 'plan' && pendingBookingAction.plan) {
+        setSelectedPlanForCheckout(pendingBookingAction.plan);
+      }
+      setPendingBookingAction(null);
+      setAuthPurpose('');
+    }
   };
 
   const handleLogout = () => {
@@ -551,6 +575,22 @@ export default function App() {
     const availableClass = classesList.find(
       (c) => c.occupiedSpots < c.totalSpots && !bookedClassIds.has(c.id)
     );
+
+    if (!currentUser) {
+      setPendingBookingAction({
+        type: 'class',
+        classSession: availableClass || classesList[0],
+        bookingType: 'reserve',
+      });
+      setAuthPurpose('reservar tu primera clase en Reformer');
+      setIsGoogleAuthOpen(true);
+      setToast({
+        title: 'Creación de Cuenta Requerida',
+        message: 'Para agendar tu clase de Pilates Reformer, por favor crea tu cuenta o inicia sesión.',
+      });
+      return;
+    }
+
     if (availableClass) {
       setBookingModalData({
         classSession: availableClass,
@@ -562,6 +602,21 @@ export default function App() {
   };
 
   const handleSelectClassForBooking = (session: ClassSession, type: 'reserve' | 'waitlist') => {
+    if (!currentUser) {
+      setPendingBookingAction({
+        type: 'class',
+        classSession: session,
+        bookingType: type,
+      });
+      setAuthPurpose(`agendar tu plaza en ${session.name} (${session.time} h)`);
+      setIsGoogleAuthOpen(true);
+      setToast({
+        title: 'Identificación Necesaria',
+        message: `Para reservar tu cama Reformer en ${session.name}, crea tu cuenta o inicia sesión.`,
+      });
+      return;
+    }
+
     setBookingModalData({
       classSession: session,
       type: type,
@@ -1033,6 +1088,19 @@ export default function App() {
   };
 
   const handleSelectPlan = (plan: PricingPlan) => {
+    if (!currentUser) {
+      setPendingBookingAction({
+        type: 'plan',
+        plan: plan,
+      });
+      setAuthPurpose(`adquirir la membresía ${plan.name} (${plan.price})`);
+      setIsGoogleAuthOpen(true);
+      setToast({
+        title: 'Cuenta Requerida para Adquirir Plan',
+        message: `Para contratar ${plan.name}, por favor crea tu cuenta o inicia sesión.`,
+      });
+      return;
+    }
     setSelectedPlanForCheckout(plan);
   };
 
@@ -1576,11 +1644,16 @@ export default function App() {
         onPerformCheckIn={handlePerformCheckIn}
       />
 
-      {/* GOOGLE SIGN-IN / ACCOUNT SELECTOR SIMULADO */}
+      {/* GOOGLE SIGN-IN / ACCOUNT SELECTOR SIMULADO & REGISTRO */}
       <GoogleAuthModal
         isOpen={isGoogleAuthOpen}
-        onClose={() => setIsGoogleAuthOpen(false)}
+        onClose={() => {
+          setIsGoogleAuthOpen(false);
+          setPendingBookingAction(null);
+          setAuthPurpose('');
+        }}
         onSuccess={handleGoogleAuthSuccess}
+        purpose={authPurpose}
       />
 
       {/* SIMULADOR DE CHECKOUT & PAGO DE PLAN */}
