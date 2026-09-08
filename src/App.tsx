@@ -12,6 +12,7 @@ import { BoutiqueSection } from './components/BoutiqueSection';
 import { FaqSection } from './components/FaqSection';
 import { LocationSection } from './components/LocationSection';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
+import { FloatingAdminButton } from './components/FloatingAdminButton';
 import { Footer } from './components/Footer';
 import { BookingModal } from './components/BookingModal';
 import { GoogleAuthModal } from './components/GoogleAuthModal';
@@ -1798,6 +1799,13 @@ export default function App() {
 
       {/* FLOATING WHATSAPP BUTTON */}
       <WhatsAppFloat />
+
+      {/* BOTÓN FLOTANTE DE ACCESO EXCLUSIVO STAFF (OWNER Y ADMINS) */}
+      <FloatingAdminButton
+        currentUser={currentUser}
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+      />
 
     </div>
   );

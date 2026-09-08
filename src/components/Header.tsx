@@ -65,14 +65,14 @@ export const Header: React.FC<HeaderProps> = ({
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-3 min-w-0">
+        <div className="flex items-center justify-between gap-4 min-w-0">
           
-          {/* Group 1: Logo Brand (with Address) + Connected Navigation */}
-          <div className="flex items-center gap-4 xl:gap-6 min-w-0">
+          {/* Group 1: Logo Brand (with Address) */}
+          <div className="flex items-center shrink-0">
             <button
               onClick={() => handleNavClick('inicio')}
               id="brand-logo"
-              className="flex items-center gap-2.5 group cursor-pointer focus:outline-hidden py-0.5 shrink-0 text-left"
+              className="flex items-center gap-2.5 group cursor-pointer focus:outline-hidden py-0.5 text-left"
               aria-label="FIRME STUDIO - Ir a la pestaña de inicio"
             >
               <img
@@ -91,75 +91,74 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
             </button>
-
-            {/* Subtle Divider */}
-            <div className="h-6 w-px bg-[#E4DED4] hidden md:block" />
-
-            {/* Desktop Navigation */}
-            <nav
-              id="desktop-navigation"
-              aria-label="Navegación por pestañas"
-              className="hidden md:flex items-center gap-2 lg:gap-3 xl:gap-5 whitespace-nowrap shrink-0"
-            >
-              {navLinks.map((link) => {
-                const isActive = activeTab === link.tab;
-                return (
-                  <button
-                    key={link.tab}
-                    type="button"
-                    onClick={() => handleNavClick(link.tab)}
-                    className={`text-xs xl:text-sm transition-colors relative py-1.5 inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                      isActive
-                        ? 'text-[#1A1815] font-semibold after:content-[\'\'] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#B5654A]'
-                        : 'text-[#6B655C] font-medium hover:text-[#1A1815] after:content-[\'\'] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1.5px] after:bg-[#B5654A] hover:after:w-full after:transition-all after:duration-200'
-                    }`}
-                  >
-                    <span>{link.name}</span>
-                    {link.count !== undefined && link.count > 0 && (
-                      <span
-                        className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full leading-tight ${
-                          isActive
-                            ? 'bg-[#B5654A] text-[#FAF8F5]'
-                            : 'bg-[#B5654A]/15 text-[#B5654A]'
-                        }`}
-                      >
-                        {link.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
           </div>
 
-          {/* Group 2: Action & Utility Area */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Student Level & EXP Badge */}
-            <button
-              type="button"
-              id="header-student-level-badge"
-              onClick={() => handleNavClick('niveles')}
-              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all cursor-pointer shadow-2xs group ${
-                activeTab === 'niveles'
-                  ? 'bg-[#B5654A] text-[#FAF8F5] border-[#B5654A]'
-                  : 'bg-[#FAF8F5] border-[#E4DED4] hover:border-[#B5654A] hover:bg-[#FAF2E8] text-[#1A1815]'
-              }`}
-              title="Ver tu nivel de estudiante, EXP y recompensas desbloqueables"
-            >
-              <Award className={`w-3.5 h-3.5 ${activeTab === 'niveles' ? 'text-white' : 'text-[#B5654A]'}`} />
-              <span className={`text-[11px] font-bold ${
-                activeTab === 'niveles' ? 'text-white' : 'text-[#1A1815] group-hover:text-[#B5654A]'
-              } transition-colors`}>
-                Nv. {currentUser?.level ?? 2}
-              </span>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono ${
-                activeTab === 'niveles'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-[#B5654A]/10 text-[#B5654A]'
-              }`}>
-                {currentUser?.exp ?? 1350} pts
-              </span>
-            </button>
+          {/* Group 2: Desktop Navigation (Spacious & Centered) */}
+          <nav
+            id="desktop-navigation"
+            aria-label="Navegación por pestañas"
+            className="hidden lg:flex items-center gap-1 xl:gap-2 2xl:gap-3 whitespace-nowrap"
+          >
+            {navLinks.map((link) => {
+              const isActive = activeTab === link.tab;
+              return (
+                <button
+                  key={link.tab}
+                  type="button"
+                  onClick={() => handleNavClick(link.tab)}
+                  className={`text-xs xl:text-sm px-2.5 py-1.5 rounded-lg transition-colors relative inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? 'text-[#1A1815] font-semibold bg-[#F1ECE5]/80 after:content-[\'\'] after:absolute after:bottom-0 after:left-2 after:right-2 after:h-[2px] after:bg-[#B5654A]'
+                      : 'text-[#6B655C] font-medium hover:text-[#1A1815] hover:bg-[#F1ECE5]/40'
+                  }`}
+                >
+                  <span>{link.name}</span>
+                  {link.count !== undefined && link.count > 0 && (
+                    <span
+                      className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full leading-tight ${
+                        isActive
+                          ? 'bg-[#B5654A] text-[#FAF8F5]'
+                          : 'bg-[#B5654A]/15 text-[#B5654A]'
+                      }`}
+                    >
+                      {link.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Group 3: Action & Utility Area */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Student Level & EXP Badge (Exclusive for Students on 2xl screens) */}
+            {!isStaff && currentUser && (
+              <button
+                type="button"
+                id="header-student-level-badge"
+                onClick={() => handleNavClick('niveles')}
+                className={`hidden 2xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all cursor-pointer shadow-2xs group ${
+                  activeTab === 'niveles'
+                    ? 'bg-[#B5654A] text-[#FAF8F5] border-[#B5654A]'
+                    : 'bg-[#FAF8F5] border-[#E4DED4] hover:border-[#B5654A] hover:bg-[#FAF2E8] text-[#1A1815]'
+                }`}
+                title="Ver tu nivel de estudiante, EXP y recompensas desbloqueables"
+              >
+                <Award className={`w-3.5 h-3.5 ${activeTab === 'niveles' ? 'text-white' : 'text-[#B5654A]'}`} />
+                <span className={`text-[11px] font-bold ${
+                  activeTab === 'niveles' ? 'text-white' : 'text-[#1A1815] group-hover:text-[#B5654A]'
+                } transition-colors`}>
+                  Nv. {currentUser?.level ?? 2}
+                </span>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono ${
+                  activeTab === 'niveles'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-[#B5654A]/10 text-[#B5654A]'
+                }`}>
+                  {currentUser?.exp ?? 1350} pts
+                </span>
+              </button>
+            )}
 
             {/* Check-in & Google Account button */}
             <button
@@ -205,65 +204,22 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Staff Back-Office Portal Trigger (Exclusive for Owner Dev & Admin) */}
-            {isStaff && (
-              <button
-                type="button"
-                id="header-cta-admin"
-                onClick={() => handleNavClick('admin')}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 sm:px-3 py-2 rounded-md border border-[#B5654A]/60 bg-[#1A1815] text-[#FAF8F5] hover:bg-[#B5654A] hover:border-[#B5654A] transition-all cursor-pointer shadow-xs"
-                title="Acceder al Portal Back-Office / Administración"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-[#B5654A]" />
-                <span className="hidden xl:inline">Panel Admin</span>
-                <span
-                  className={`text-[9px] uppercase font-bold px-1.5 py-0.2 rounded-xs ${
-                    isOwnerDev ? 'bg-[#B5654A] text-white' : 'bg-emerald-600 text-white'
-                  }`}
-                >
-                  {isOwnerDev ? 'Owner' : 'Admin'}
-                </span>
-              </button>
-            )}
-
-            {/* Reception Tablet Kiosk Mode Trigger */}
-            <button
-              type="button"
-              onClick={onOpenKioskModal}
-              className="hidden lg:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 sm:px-3 py-2 rounded-md border border-[#E4DED4] bg-white hover:bg-[#F1ECE5] hover:border-[#B5654A]/40 text-[#6B655C] hover:text-[#1A1815] transition-all cursor-pointer shadow-xs"
-              title="Abrir Tótem Kiosco de Recepción para tablet en Jr. Akapana 1261"
-            >
-              <Tablet className="w-3.5 h-3.5 text-[#B5654A]" />
-              <span>Tótem SJL</span>
-            </button>
-
-            {/* QR Mostrador Trigger */}
-            <button
-              type="button"
-              onClick={onOpenQrModal}
-              className="hidden xl:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 sm:px-3 py-2 rounded-md border border-[#E4DED4] bg-white hover:bg-[#F1ECE5] hover:border-[#B5654A]/40 text-[#6B655C] hover:text-[#1A1815] transition-all cursor-pointer shadow-xs"
-              title="Abrir QR de Mostrador y Enlace Único de Registro para alumnas"
-            >
-              <QrCode className="w-3.5 h-3.5 text-[#B5654A]" />
-              <span>QR Mostrador</span>
-            </button>
-
             {/* Primary Action button */}
             <button
               id="header-cta-reserve"
               onClick={() => handleNavClick('horarios')}
-              className="inline-flex items-center justify-center bg-[#B5654A] hover:bg-[#9A5340] text-[#FAF8F5] px-3.5 sm:px-4.5 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-medium transition-colors duration-200 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#B5654A]/40 cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center justify-center bg-[#B5654A] hover:bg-[#9A5340] text-[#FAF8F5] px-3.5 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors duration-200 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#B5654A]/40 cursor-pointer whitespace-nowrap"
             >
               <Calendar className="w-3.5 h-3.5 mr-1.5 sm:hidden" />
               <span>Ver Horarios</span>
             </button>
 
-            {/* Mobile Hamburger Toggle */}
+            {/* Mobile / Tablet Hamburger Toggle (lg:hidden) */}
             <button
               id="mobile-menu-toggle"
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-md text-[#1A1815] hover:bg-[#F1ECE5] transition-colors focus:outline-hidden cursor-pointer"
+              className="lg:hidden p-2 rounded-md text-[#1A1815] hover:bg-[#F1ECE5] transition-colors focus:outline-hidden cursor-pointer"
               aria-expanded={mobileMenuOpen}
               aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
             >
@@ -280,7 +236,7 @@ export const Header: React.FC<HeaderProps> = ({
         {mobileMenuOpen && (
           <div
             id="mobile-navigation"
-            className="md:hidden pt-4 pb-3 border-t border-[#E4DED4] mt-3 space-y-1 animate-in fade-in duration-200"
+            className="lg:hidden pt-4 pb-3 border-t border-[#E4DED4] mt-3 space-y-1 animate-in fade-in duration-200"
           >
             {navLinks.map((link) => {
               const isActive = activeTab === link.tab;
@@ -330,25 +286,28 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={() => handleNavClick('niveles')}
-                className={`w-full py-2.5 px-3 rounded-md border text-xs font-bold flex items-center justify-between shadow-2xs cursor-pointer transition-colors ${
-                  activeTab === 'niveles'
-                    ? 'bg-[#B5654A] text-[#FAF8F5] border-[#B5654A]'
-                    : 'bg-gradient-to-r from-[#FAF2E8] to-[#FAF8F5] border-[#B5654A]/30 text-[#1A1815]'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-[#B5654A]" />
-                  <span>Nivel {currentUser?.level ?? 2}: {currentUser?.levelTitle || 'Enfoque & Constancia'}</span>
-                </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                  activeTab === 'niveles' ? 'bg-white/20 text-white' : 'bg-[#B5654A] text-white'
-                }`}>
-                  {currentUser?.exp ?? 1350} pts
-                </span>
-              </button>
+              {/* Student Level Badge (Students only) */}
+              {!isStaff && currentUser && (
+                <button
+                  type="button"
+                  onClick={() => handleNavClick('niveles')}
+                  className={`w-full py-2.5 px-3 rounded-md border text-xs font-bold flex items-center justify-between shadow-2xs cursor-pointer transition-colors ${
+                    activeTab === 'niveles'
+                      ? 'bg-[#B5654A] text-[#FAF8F5] border-[#B5654A]'
+                      : 'bg-gradient-to-r from-[#FAF2E8] to-[#FAF8F5] border-[#B5654A]/30 text-[#1A1815]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-[#B5654A]" />
+                    <span>Nivel {currentUser?.level ?? 2}: {currentUser?.levelTitle || 'Enfoque & Constancia'}</span>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                    activeTab === 'niveles' ? 'bg-white/20 text-white' : 'bg-[#B5654A] text-white'
+                  }`}>
+                    {currentUser?.exp ?? 1350} pts
+                  </span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -382,29 +341,34 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-[10px] text-[#B5654A] uppercase font-bold">4 Pasos</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenKioskModal?.();
-                }}
-                className="w-full py-2.5 px-3 rounded-md bg-[#1A1815] text-[#FAF8F5] text-xs font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-              >
-                <Tablet className="w-4 h-4 text-amber-300" />
-                <span>Modo Tótem Kiosco (Tablet Recepción)</span>
-              </button>
+              {/* Staff Exclusive Mobile Reception Tools */}
+              {isStaff && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenKioskModal?.();
+                    }}
+                    className="w-full py-2.5 px-3 rounded-md bg-[#1A1815] text-[#FAF8F5] text-xs font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <Tablet className="w-4 h-4 text-amber-300" />
+                    <span>Modo Tótem Kiosco (Tablet Recepción)</span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenQrModal?.();
-                }}
-                className="w-full py-2.5 px-3 rounded-md bg-white border border-[#DDD5C9] text-[#1A1815] hover:bg-[#F1ECE5] text-xs font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-              >
-                <QrCode className="w-4 h-4 text-[#B5654A]" />
-                <span>QR Mostrador & Enlace de Registro</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenQrModal?.();
+                    }}
+                    className="w-full py-2.5 px-3 rounded-md bg-white border border-[#DDD5C9] text-[#1A1815] hover:bg-[#F1ECE5] text-xs font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <QrCode className="w-4 h-4 text-[#B5654A]" />
+                    <span>QR Mostrador & Enlace de Registro</span>
+                  </button>
+                </>
+              )}
 
               <div className="flex flex-col gap-1 text-xs text-[#6B655C] py-2 border-t border-[#E4DED4]">
                 <div className="flex items-center">
