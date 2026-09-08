@@ -555,24 +555,24 @@ export default function App() {
     handleGainExp(150, `Check-in en Sala Realizado (Cama #${assignedBed})`);
   };
 
-  // Sync state with URL hash (#admin or public tabs)
+  // Sync state with URL hash (#acceso-staff, #admin or public tabs) or path (/admin, /acceso-staff)
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash === 'registro' || hash === 'registro-smartfit') {
-        setAuthInitialModality('manual');
-        setIsGoogleAuthOpen(true);
-        setAuthPurpose('crear tu cuenta en FIRME STUDIO');
-      } else if (hash === 'qr' || hash === 'registro-qr') {
-        setAuthInitialModality('qr');
-        setIsGoogleAuthOpen(true);
-      } else if (hash === 'registro-whatsapp' || hash === 'whatsapp') {
-        setAuthInitialModality('whatsapp');
-        setIsGoogleAuthOpen(true);
-      } else if (hash === 'registro-presencial' || hash === 'counter') {
-        setAuthInitialModality('receptionist');
-        setIsGoogleAuthOpen(true);
-      } else if (hash === 'admin') {
+    const handleRouteCheck = () => {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      const pathname = window.location.pathname.toLowerCase();
+
+      // Enlace único privado para el panel administrativo y login de staff
+      const isStaffRoute =
+        hash === 'acceso-staff' ||
+        hash === 'staff-portal' ||
+        hash === 'admin' ||
+        hash === 'staff' ||
+        hash === 'admin-login' ||
+        pathname === '/admin' ||
+        pathname === '/acceso-staff' ||
+        pathname === '/staff';
+
+      if (isStaffRoute) {
         const savedUserStr = localStorage.getItem('firme_auth_user');
         if (savedUserStr) {
           try {
@@ -593,14 +593,30 @@ export default function App() {
           }
         }
         setActiveTab('admin');
+        return;
+      }
+
+      if (hash === 'registro' || hash === 'registro-smartfit') {
+        setAuthInitialModality('manual');
+        setIsGoogleAuthOpen(true);
+        setAuthPurpose('crear tu cuenta en FIRME STUDIO');
+      } else if (hash === 'qr' || hash === 'registro-qr') {
+        setAuthInitialModality('qr');
+        setIsGoogleAuthOpen(true);
+      } else if (hash === 'registro-whatsapp' || hash === 'whatsapp') {
+        setAuthInitialModality('whatsapp');
+        setIsGoogleAuthOpen(true);
+      } else if (hash === 'registro-presencial' || hash === 'counter') {
+        setAuthInitialModality('receptionist');
+        setIsGoogleAuthOpen(true);
       } else if (['inicio', 'horarios', 'mis-clases', 'membresias', 'profesores', 'metodo'].includes(hash)) {
         setActiveTab(hash as MainTabType);
       }
     };
 
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    handleRouteCheck();
+    window.addEventListener('hashchange', handleRouteCheck);
+    return () => window.removeEventListener('hashchange', handleRouteCheck);
   }, []);
 
   const handleSelectTab = (tab: MainTabType) => {
@@ -614,10 +630,11 @@ export default function App() {
         return;
       }
       setActiveTab('admin');
-      window.location.hash = 'admin';
+      window.location.hash = 'acceso-staff';
     } else {
       setActiveTab(tab);
-      if (window.location.hash === '#admin') {
+      const staffHashes = ['#admin', '#acceso-staff', '#staff-portal', '#staff', '#admin-login'];
+      if (staffHashes.includes(window.location.hash)) {
         history.replaceState(null, '', window.location.pathname);
       }
     }

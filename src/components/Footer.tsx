@@ -261,21 +261,9 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
           <span>
             © {new Date().getFullYear()} FIRME STUDIO S.A.C. · LIMA - SJL
           </span>
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => handleLinkClick('admin')}
-              className="text-[#8C8479] hover:text-[#B5654A] transition-colors inline-flex items-center gap-1.5 cursor-pointer text-[11px] font-medium"
-              title="Acceso exclusivo para el personal del estudio (recepción, profesores y administración)"
-              aria-label="Acceso al Portal Administrativo"
-            >
-              <Lock className="w-3 h-3 text-[#B5654A]" />
-              <span>Portal Staff / Back-Office</span>
-            </button>
-            <span className="font-fraunces italic text-[#B5654A]">
-              Pilates, con intención.
-            </span>
-          </div>
+          <span className="font-fraunces italic text-[#B5654A]">
+            Pilates, con intención.
+          </span>
         </div>
 
       </div>
