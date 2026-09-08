@@ -21,6 +21,7 @@ import { StudentLevelModal } from './components/StudentLevelModal';
 import { StudentProgressTab } from './components/StudentProgressTab';
 import { AdminPanel } from './components/AdminPanel';
 import { ReceptionKioskModal } from './components/ReceptionKioskModal';
+import { ReceptionQrModal } from './components/ReceptionQrModal';
 import { BiomechanicsQuizModal } from './components/BiomechanicsQuizModal';
 import { AiAssistantWidget } from './components/AiAssistantWidget';
 import { studioApi } from './services/api';
@@ -316,6 +317,7 @@ export default function App() {
   const [isGoogleAuthOpen, setIsGoogleAuthOpen] = useState(false);
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
   const [isKioskModalOpen, setIsKioskModalOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isBiomechanicsQuizOpen, setIsBiomechanicsQuizOpen] = useState(false);
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState<PricingPlan | null>(null);
   const [authPurpose, setAuthPurpose] = useState<string>('');
@@ -551,7 +553,12 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash === 'admin') {
+      if (hash === 'registro') {
+        setIsGoogleAuthOpen(true);
+        setAuthPurpose('crear tu cuenta en FIRME STUDIO');
+      } else if (hash === 'qr') {
+        setIsQrModalOpen(true);
+      } else if (hash === 'admin') {
         const savedUserStr = localStorage.getItem('firme_auth_user');
         if (savedUserStr) {
           try {
@@ -1338,6 +1345,7 @@ export default function App() {
           onAssignBed={handleAssignBed}
           onUpdateClientCredits={handleUpdateClientCredits}
           onClearDemoData={handleClearDemoData}
+          onOpenQrModal={() => setIsQrModalOpen(true)}
         />
       </div>
     );
@@ -1396,6 +1404,7 @@ export default function App() {
         onOpenLevelModal={() => handleSelectTab('niveles')}
         onOpenKioskModal={() => setIsKioskModalOpen(true)}
         onOpenBiomechanicsQuiz={() => setIsBiomechanicsQuizOpen(true)}
+        onOpenQrModal={() => setIsQrModalOpen(true)}
       />
 
       {/* 2. MAIN INDEPENDENT TAB CONTENT PANELS */}
@@ -1725,6 +1734,13 @@ export default function App() {
           );
         }}
         onGainExp={handleGainExp}
+        onOpenQrModal={() => setIsQrModalOpen(true)}
+      />
+
+      {/* MODAL DE CÓDIGO QR Y ENLACE ÚNICO DE REGISTRO PARA MOSTRADOR */}
+      <ReceptionQrModal
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
       />
 
       {/* TEST BIOMECÁNICO & POSTURAL EN 4 PASOS */}

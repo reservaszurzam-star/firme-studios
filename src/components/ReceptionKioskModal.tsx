@@ -7,6 +7,7 @@ import {
   MapPin,
   Delete,
   AlertCircle,
+  QrCode,
 } from 'lucide-react';
 import { BookingRecord, ClientProfile } from '../types';
 import { supabaseService } from '../services/supabaseService';
@@ -19,6 +20,7 @@ interface ReceptionKioskModalProps {
   clients: ClientProfile[];
   onCheckInSuccess?: (booking: BookingRecord) => void;
   onGainExp?: (amount: number, reason: string) => void;
+  onOpenQrModal?: () => void;
 }
 
 export const ReceptionKioskModal: React.FC<ReceptionKioskModalProps> = ({
@@ -28,6 +30,7 @@ export const ReceptionKioskModal: React.FC<ReceptionKioskModalProps> = ({
   clients,
   onCheckInSuccess,
   onGainExp,
+  onOpenQrModal,
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
@@ -358,6 +361,20 @@ export const ReceptionKioskModal: React.FC<ReceptionKioskModalProps> = ({
                 <CheckCircle2 className="w-5 h-5" />
                 <span>Validar Ingreso a Sala</span>
               </button>
+
+              {/* Botón para alumnas nuevas sin cuenta */}
+              {onOpenQrModal && (
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={onOpenQrModal}
+                    className="inline-flex items-center gap-2 text-xs font-semibold text-amber-300 hover:text-white transition-colors py-2 px-4 rounded-xl border border-amber-500/30 hover:border-amber-400 bg-[#332F2A]/60 cursor-pointer shadow-xs"
+                  >
+                    <QrCode className="w-4 h-4 text-[#B5654A]" />
+                    <span>¿Primera vez en el estudio? Ver QR de Registro para tu Celular</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ) : (

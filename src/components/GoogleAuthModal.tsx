@@ -21,6 +21,7 @@ interface GoogleAuthModalProps {
   onClose: () => void;
   onSuccess: (user: AuthUser) => void;
   purpose?: string;
+  initialMode?: 'register' | 'login' | 'google' | 'staff';
 }
 
 export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
@@ -28,9 +29,16 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   onClose,
   onSuccess,
   purpose = 'para continuar en FIRME STUDIO',
+  initialMode = 'register',
 }) => {
   // Navigation tabs: 'register' (Crear cuenta) | 'login' (Iniciar sesión) | 'google' (Google) | 'staff' (Equipo)
-  const [authMode, setAuthMode] = useState<'register' | 'login' | 'google' | 'staff'>('register');
+  const [authMode, setAuthMode] = useState<'register' | 'login' | 'google' | 'staff'>(initialMode);
+
+  React.useEffect(() => {
+    if (isOpen && initialMode) {
+      setAuthMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
 
   // Form states
   const [registerName, setRegisterName] = useState('');

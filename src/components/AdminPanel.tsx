@@ -101,6 +101,7 @@ interface AdminPanelProps {
   onUpdateClientCredits?: (clientId: string, credits: number) => void;
   onClearDemoData?: () => void;
   initialSubTab?: AdminSubTab;
+  onOpenQrModal?: () => void;
 }
 
 interface ErrorBoundaryProps {
@@ -139,22 +140,17 @@ class AdminErrorBoundary extends (React.Component as new (props: any) => any) {
             <h3 className="font-fraunces text-lg font-bold text-[#1A1815]">
               No se pudo cargar este módulo
             </h3>
-            <p className="text-xs text-[#6B655C] mt-1 max-w-md mx-auto">
-              Ocurrió un detalle al renderizar los datos. Puedes reiniciar la vista o recargar el módulo.
+            <p className="text-xs text-[#6B655C] max-w-sm mx-auto mt-1 leading-relaxed">
+              Ocurrió un error inesperado al renderizar esta sección. Puedes volver al Dashboard sin perder tus datos.
             </p>
-            {this.state.error?.message && (
-              <p className="font-mono text-[11px] text-rose-700 bg-rose-50 p-2 rounded-lg mt-2 max-w-md mx-auto truncate">
-                {this.state.error.message}
-              </p>
-            )}
           </div>
           <button
             type="button"
             onClick={() => {
               this.setState({ hasError: false, error: null });
-              this.props.onReset?.();
+              if (this.props.onReset) this.props.onReset();
             }}
-            className="px-4 py-2 bg-[#B5654A] hover:bg-[#9A5340] text-white text-xs font-semibold rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-2"
+            className="px-4 py-2 bg-[#B5654A] hover:bg-[#9A5340] text-white rounded-xl text-xs font-semibold inline-flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Volver al Dashboard</span>
@@ -207,6 +203,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onUpdateClientCredits,
   onClearDemoData,
   initialSubTab,
+  onOpenQrModal,
 }) => {
   const isOwnerDev = currentUser?.role === 'owner_dev';
   const isStaff = currentUser?.role === 'owner_dev' || currentUser?.role === 'admin';
@@ -944,6 +941,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 {isOwnerDev ? 'OWNER DEV' : 'ADMIN'}
               </span>
             </div>
+
+            {/* QR Mostrador Button */}
+            {onOpenQrModal && (
+              <button
+                type="button"
+                onClick={onOpenQrModal}
+                className="px-3 py-1.5 text-xs font-semibold bg-white border border-[#DDD5C9] hover:bg-[#F1ECE5] hover:border-[#B5654A] text-[#1A1815] rounded-xl transition-all shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
+                title="Abrir QR y Enlace Único de Registro para Alumnas"
+              >
+                <QrCode className="w-3.5 h-3.5 text-[#B5654A]" />
+                <span className="hidden md:inline">QR Mostrador</span>
+              </button>
+            )}
 
             {/* Quick Web switch button */}
             <button

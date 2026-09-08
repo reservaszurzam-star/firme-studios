@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Calendar, Sparkles, MapPin, UserCheck, Zap, Award, Tablet, Activity, ShieldCheck } from 'lucide-react';
+import { Menu, X, Calendar, Sparkles, MapPin, UserCheck, Zap, Award, Tablet, Activity, ShieldCheck, QrCode } from 'lucide-react';
 import { MainTabType, AuthUser } from '../types';
 
 interface HeaderProps {
@@ -12,6 +12,7 @@ interface HeaderProps {
   onOpenLevelModal?: () => void;
   onOpenKioskModal?: () => void;
   onOpenBiomechanicsQuiz?: () => void;
+  onOpenQrModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,6 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLevelModal,
   onOpenKioskModal,
   onOpenBiomechanicsQuiz,
+  onOpenQrModal,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -235,6 +237,17 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Tótem SJL</span>
             </button>
 
+            {/* QR Mostrador Trigger */}
+            <button
+              type="button"
+              onClick={onOpenQrModal}
+              className="hidden xl:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 sm:px-3 py-2 rounded-md border border-[#E4DED4] bg-white hover:bg-[#F1ECE5] hover:border-[#B5654A]/40 text-[#6B655C] hover:text-[#1A1815] transition-all cursor-pointer shadow-xs"
+              title="Abrir QR de Mostrador y Enlace Único de Registro para alumnas"
+            >
+              <QrCode className="w-3.5 h-3.5 text-[#B5654A]" />
+              <span>QR Mostrador</span>
+            </button>
+
             {/* Primary Action button */}
             <button
               id="header-cta-reserve"
@@ -379,6 +392,18 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Tablet className="w-4 h-4 text-amber-300" />
                 <span>Modo Tótem Kiosco (Tablet Recepción)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenQrModal?.();
+                }}
+                className="w-full py-2.5 px-3 rounded-md bg-white border border-[#DDD5C9] text-[#1A1815] hover:bg-[#F1ECE5] text-xs font-semibold flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              >
+                <QrCode className="w-4 h-4 text-[#B5654A]" />
+                <span>QR Mostrador & Enlace de Registro</span>
               </button>
 
               <div className="flex flex-col gap-1 text-xs text-[#6B655C] py-2 border-t border-[#E4DED4]">
