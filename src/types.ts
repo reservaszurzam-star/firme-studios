@@ -249,19 +249,23 @@ export interface StaffAccount {
   phone: string;
   dni: string;
   description: string;
+  defaultPassword?: string;
+  secondaryEmail?: string;
 }
 
 export const PREDEFINED_STAFF: StaffAccount[] = [
   {
     id: 'staff-valentino',
     name: 'Valentino',
-    email: 'valentino@firmestudio.pe',
+    email: 'tinoykz@gmail.com',
+    secondaryEmail: 'valentino@firmestudio.pe',
     role: 'owner_dev',
     roleTitle: 'Owner / Lead Developer',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-    phone: '+51 987 654 321',
+    phone: '+51 981 223 330',
     dni: '70112233',
     description: 'Acceso Total: Infraestructura, APIs, Supabase y Back-Office',
+    defaultPassword: 'firme2026',
   },
   {
     id: 'staff-soni',
@@ -273,6 +277,7 @@ export const PREDEFINED_STAFF: StaffAccount[] = [
     phone: '+51 991 223 344',
     dni: '71223344',
     description: 'Gestión Operativa: Clientes, Agenda, 8 Camas, Caja y WhatsApp',
+    defaultPassword: 'firme2026',
   },
   {
     id: 'staff-keyla',
@@ -284,25 +289,71 @@ export const PREDEFINED_STAFF: StaffAccount[] = [
     phone: '+51 982 334 455',
     dni: '72334455',
     description: 'Gestión Operativa: Clientes, Agenda, 8 Camas, Caja y WhatsApp',
+    defaultPassword: 'firme2026',
   },
 ];
 
-export function determineUserRole(name?: string, email?: string): { role: UserRole; roleTitle: string } {
+export function determineUserRole(
+  name?: string,
+  email?: string,
+  dni?: string
+): { role: UserRole; roleTitle: string } {
   const normName = (name || '').trim().toLowerCase();
   const normEmail = (email || '').trim().toLowerCase();
+  const normDni = (dni || '').trim();
 
-  if (normName.includes('valentino') || normEmail.includes('valentino')) {
-    return { role: 'owner_dev', roleTitle: 'Owner Dev' };
+  // OWNER DEV: Valentino / Tino (incluye tinoykz@gmail.com, DNI 70112233)
+  if (
+    normDni === '70112233' ||
+    normName.includes('valentino') ||
+    normEmail.includes('valentino') ||
+    normName === 'tino' ||
+    normName.startsWith('tino') ||
+    normEmail.includes('tino') ||
+    normEmail.includes('tinoykz') ||
+    normEmail === 'tinoykz@gmail.com'
+  ) {
+    return { role: 'owner_dev', roleTitle: 'Owner / Lead Developer' };
   }
-  if (normName.includes('soni') || normEmail.includes('soni')) {
-    return { role: 'admin', roleTitle: 'Administración' };
+
+  // ADMIN: Soni (DNI 71223344)
+  if (
+    normDni === '71223344' ||
+    normName.includes('soni') ||
+    normEmail.includes('soni') ||
+    normEmail === 'soni@firmestudio.pe'
+  ) {
+    return { role: 'admin', roleTitle: 'Administración Sede SJL' };
   }
-  if (normName.includes('keyla') || normEmail.includes('keyla')) {
-    return { role: 'admin', roleTitle: 'Administración' };
+
+  // ADMIN: Keyla (DNI 72334455)
+  if (
+    normDni === '72334455' ||
+    normName.includes('keyla') ||
+    normEmail.includes('keyla') ||
+    normEmail === 'keyla@firmestudio.pe'
+  ) {
+    return { role: 'admin', roleTitle: 'Administración & Operaciones' };
   }
 
   return { role: 'client', roleTitle: 'Alumna' };
 }
+
+export function findStaffByCredential(identifier: string): StaffAccount | undefined {
+  const clean = (identifier || '').trim().toLowerCase();
+  if (!clean) return undefined;
+  return PREDEFINED_STAFF.find((s) => {
+    return (
+      s.email.toLowerCase() === clean ||
+      (s.secondaryEmail && s.secondaryEmail.toLowerCase() === clean) ||
+      (s.dni && s.dni.toLowerCase() === clean) ||
+      s.name.toLowerCase() === clean ||
+      (clean.includes('tinoykz') && s.role === 'owner_dev') ||
+      (clean === 'tino' && s.role === 'owner_dev')
+    );
+  });
+}
+
 
 export interface AuthUser {
   id: string;

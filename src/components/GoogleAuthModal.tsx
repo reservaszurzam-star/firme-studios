@@ -30,7 +30,7 @@ import {
   Phone,
   CheckCircle2,
 } from 'lucide-react';
-import { AuthUser, PREDEFINED_STAFF, StaffAccount } from '../types';
+import { AuthUser, PREDEFINED_STAFF, StaffAccount, findStaffByCredential } from '../types';
 import { supabaseService } from '../services/supabaseService';
 
 export type AuthModality = 'qr' | 'manual' | 'whatsapp' | 'receptionist';
@@ -105,6 +105,11 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Login dedicado para Staff (Owner y Admins)
+  const [staffLoginIdentifier, setStaffLoginIdentifier] = useState('');
+  const [staffLoginPassword, setStaffLoginPassword] = useState('');
+  const [showStaffLoginPassword, setShowStaffLoginPassword] = useState(false);
 
   // --------------------------------------------------------------------------
   // ESTADOS - MODALIDAD 3: ATENCION WHATSAPP (CONCIERGE)
@@ -298,6 +303,41 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
     }
 
     setLoadingAction('smartfit_login');
+
+    // Comprobación directa para cuentas Staff (Valentino, Soni o Keyla)
+    const staffMatch = findStaffByCredential(loginIdentifier.trim());
+    if (staffMatch) {
+      const storedMaster = localStorage.getItem('firme_admin_password') || 'firme2026';
+      const staffPass = staffMatch.defaultPassword || 'firme2026';
+      if (loginPassword.trim() === staffPass || loginPassword.trim() === storedMaster) {
+        const staffUser: AuthUser = {
+          id: staffMatch.id,
+          name: staffMatch.name,
+          email: staffMatch.email,
+          role: staffMatch.role,
+          roleTitle: staffMatch.roleTitle,
+          avatar: staffMatch.avatar,
+          provider: 'manual',
+          phone: staffMatch.phone,
+          dni: staffMatch.dni,
+          planName: staffMatch.role === 'owner_dev' ? 'Owner Developer' : 'Administración Sede',
+          creditsLeft: 99,
+          experienceLevel: 'Avanzado',
+          healthConditions: ['Ninguna'],
+        };
+
+        localStorage.setItem('firme_auth_user', JSON.stringify(staffUser));
+        sessionStorage.setItem('firme_admin_logged', 'true');
+        setLoadingAction(null);
+        onSuccess(staffUser);
+        onClose();
+        return;
+      } else {
+        setErrorMsg(`Contraseña incorrecta para la cuenta de ${staffMatch.name}.`);
+        setLoadingAction(null);
+        return;
+      }
+    }
 
     try {
       // 1. Intento con Supabase (soporta DNI o correo)
@@ -565,6 +605,60 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
     }, 500);
   };
 
+  // Staff custom login con formulario (DNI o email + contraseña)
+  const handleStaffCustomLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+
+    if (!staffLoginIdentifier.trim()) {
+      setErrorMsg('Por favor ingresa tu correo oficial o número de DNI de Staff.');
+      return;
+    }
+    if (!staffLoginPassword) {
+      setErrorMsg('Por favor ingresa tu contraseña de Staff.');
+      return;
+    }
+
+    const staffMatch = findStaffByCredential(staffLoginIdentifier.trim());
+    if (!staffMatch) {
+      setErrorMsg('No se encontró ninguna cuenta Staff con el DNI o correo ingresado.');
+      return;
+    }
+
+    const storedMaster = localStorage.getItem('firme_admin_password') || 'firme2026';
+    const staffPass = staffMatch.defaultPassword || 'firme2026';
+    if (staffLoginPassword.trim() !== staffPass && staffLoginPassword.trim() !== storedMaster) {
+      setErrorMsg(`Contraseña incorrecta para la cuenta administrativa de ${staffMatch.name}.`);
+      return;
+    }
+
+    setLoadingAction('staff_login_custom');
+    setTimeout(() => {
+      const authUser: AuthUser = {
+        id: staffMatch.id,
+        name: staffMatch.name,
+        email: staffMatch.email,
+        role: staffMatch.role,
+        roleTitle: staffMatch.roleTitle,
+        avatar: staffMatch.avatar,
+        provider: 'manual',
+        phone: staffMatch.phone,
+        dni: staffMatch.dni,
+        planName: staffMatch.role === 'owner_dev' ? 'Owner Developer' : 'Administración Sede',
+        creditsLeft: 99,
+        experienceLevel: 'Avanzado',
+        healthConditions: ['Ninguna'],
+      };
+
+      localStorage.setItem('firme_auth_user', JSON.stringify(authUser));
+      sessionStorage.setItem('firme_admin_logged', 'true');
+      setLoadingAction(null);
+      onSuccess(authUser);
+      onClose();
+    }, 400);
+  };
+
+
   return (
     <div
       role="dialog"
@@ -608,12 +702,46 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
 
           <p className="text-xs text-[#6B655C] mt-0.5 leading-relaxed">
             {isStaffView
-              ? 'Selecciona tu cuenta administrativa para acceder al Back-Office.'
+              ? 'Panel exclusivo del equipo administrativo (Valentino, Soni, Keyla).'
               : 'Elige la modalidad que prefieras para crear tu cuenta o iniciar sesión:'}
           </p>
         </div>
 
-        {/* SELECTOR DE LAS 4 MODALIDADES */}
+        {/* SELECTOR PRINCIPAL: ALUMNAS vs STAFF */}
+        <div className="grid grid-cols-2 gap-2 p-1.5 bg-[#E8E2D8] rounded-2xl border border-[#D5CDC1] mb-3 text-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setIsStaffView(false);
+              setErrorMsg('');
+            }}
+            className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              !isStaffView
+                ? 'bg-[#1A1815] text-[#FAF8F5] shadow-xs'
+                : 'text-[#6B655C] hover:text-[#1A1815] hover:bg-white/40'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5 text-[#B5654A]" />
+            <span>Acceso Alumnas (4 Modalidades)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsStaffView(true);
+              setErrorMsg('');
+            }}
+            className={`py-2 px-3 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              isStaffView
+                ? 'bg-[#B5654A] text-white shadow-xs'
+                : 'text-[#6B655C] hover:text-[#1A1815] hover:bg-white/40'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Acceso Staff (Owner & Admins)</span>
+          </button>
+        </div>
+
+        {/* SELECTOR DE LAS 4 MODALIDADES (SOLO EN MODO ALUMNAS) */}
         {!isStaffView && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 bg-[#EFE9DF] rounded-2xl border border-[#DDD5C9] mb-3 text-xs">
             <button
@@ -1502,73 +1630,187 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
               VISTA STAFF (VALENTINO, SONI, KEYLA)
               ================================================================= */}
           {isStaffView && (
-            <div className="space-y-2.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6B655C] block">
-                Accesos administrativos autorizados:
-              </span>
+            <div className="space-y-3.5">
+              {/* Banner informativo */}
+              <div className="bg-[#1A1815] text-[#FAF8F5] p-3.5 rounded-2xl border border-[#B5654A]/50 shadow-xs space-y-1">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#FAF8F5]">
+                  <Shield className="w-4 h-4 text-[#B5654A]" />
+                  <span>Equipo Staff Autorizado de FIRME STUDIO</span>
+                </div>
+                <p className="text-[11px] text-[#C9C3BA] leading-relaxed">
+                  Cuentas oficiales para la administración de la sede SJL. Accede en 1-click o validando tu contraseña predeterminada (<code className="bg-[#2E2823] text-[#B5654A] px-1 py-0.5 rounded font-mono">firme2026</code>).
+                </p>
+              </div>
 
-              {PREDEFINED_STAFF.map((staff) => {
-                const isOwnerDev = staff.role === 'owner_dev';
-                return (
-                  <button
-                    key={staff.id}
-                    type="button"
-                    onClick={() => handleSelectStaff(staff)}
-                    disabled={loadingAction !== null}
-                    className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all text-left group cursor-pointer disabled:opacity-50 ${
-                      isOwnerDev
-                        ? 'bg-[#1A1815] text-[#FAF8F5] border-[#B5654A]/60 hover:border-[#B5654A]'
-                        : 'bg-white hover:bg-[#F1ECE5] border-[#DDD5C9] text-[#1A1815]'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <img
-                        src={staff.avatar}
-                        alt={staff.name}
-                        className={`w-10 h-10 rounded-full object-cover border ${
-                          isOwnerDev ? 'border-[#B5654A]' : 'border-[#E4DED4]'
-                        }`}
-                      />
-                      <div>
-                        <div className="font-semibold text-sm flex items-center gap-1.5">
-                          <span className={isOwnerDev ? 'text-[#FAF8F5]' : 'text-[#1A1815]'}>
-                            {staff.name}
-                          </span>
-                          <span
-                            className={`text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-sm border ${
-                              isOwnerDev
-                                ? 'bg-[#B5654A] text-white border-[#B5654A]'
-                                : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+              {/* Cards de las 3 Cuentas Staff */}
+              <div className="space-y-2.5">
+                {PREDEFINED_STAFF.map((staff) => {
+                  const isOwnerDev = staff.role === 'owner_dev';
+                  return (
+                    <div
+                      key={staff.id}
+                      className={`p-3.5 rounded-2xl border transition-all ${
+                        isOwnerDev
+                          ? 'bg-[#1A1815] text-[#FAF8F5] border-[#B5654A]/70 shadow-sm'
+                          : 'bg-white border-[#DDD5C9] text-[#1A1815] shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start space-x-3">
+                          <img
+                            src={staff.avatar}
+                            alt={staff.name}
+                            className={`w-11 h-11 rounded-full object-cover border-2 shrink-0 ${
+                              isOwnerDev ? 'border-[#B5654A]' : 'border-[#E4DED4]'
                             }`}
-                          >
-                            {isOwnerDev ? 'Owner Dev' : 'Admin'}
-                          </span>
-                        </div>
-                        <div className={`text-xs ${isOwnerDev ? 'text-[#C9C3BA]' : 'text-[#6B655C]'}`}>
-                          {staff.email}
-                        </div>
-                        <div className={`text-[10px] mt-0.5 ${isOwnerDev ? 'text-[#B5654A]' : 'text-[#8C8479]'}`}>
-                          {staff.roleTitle}
+                          />
+                          <div>
+                            <div className="font-semibold text-sm flex items-center gap-2 flex-wrap">
+                              <span className={isOwnerDev ? 'text-[#FAF8F5]' : 'text-[#1A1815]'}>
+                                {staff.name}
+                              </span>
+                              <span
+                                className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-sm border ${
+                                  isOwnerDev
+                                    ? 'bg-[#B5654A] text-white border-[#B5654A]'
+                                    : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                }`}
+                              >
+                                {isOwnerDev ? 'Owner / Lead Developer' : 'Administradora SJL'}
+                              </span>
+                            </div>
+
+                            <div className={`text-xs mt-0.5 ${isOwnerDev ? 'text-[#C9C3BA]' : 'text-[#6B655C]'}`}>
+                              {staff.email}
+                              {staff.secondaryEmail && (
+                                <span className="opacity-75 font-mono text-[11px] block">
+                                  {staff.secondaryEmail}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-3 mt-1.5 text-[11px]">
+                              <span className={`font-mono ${isOwnerDev ? 'text-[#D49581]' : 'text-[#8C8479]'}`}>
+                                DNI: <strong>{staff.dni}</strong>
+                              </span>
+                              <span className={`font-mono ${isOwnerDev ? 'text-[#D49581]' : 'text-[#8C8479]'}`}>
+                                Clave: <strong>{staff.defaultPassword || 'firme2026'}</strong>
+                              </span>
+                            </div>
+
+                            <p className={`text-[10px] mt-1 leading-snug ${isOwnerDev ? 'text-[#AFA79C]' : 'text-[#8C8479]'}`}>
+                              {staff.description}
+                            </p>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Botones de Acción */}
+                      <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectStaff(staff)}
+                          disabled={loadingAction !== null}
+                          className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs ${
+                            isOwnerDev
+                              ? 'bg-[#B5654A] hover:bg-[#9A5340] text-white'
+                              : 'bg-[#1A1815] hover:bg-[#322C27] text-white'
+                          }`}
+                        >
+                          {loadingAction === staff.id ? (
+                            <span>Conectando...</span>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Ingreso Inmediato (1-Click)</span>
+                            </>
+                          )}
+                        </button>
+
+                        {isOwnerDev && (
+                          <button
+                            type="button"
+                            onClick={handleGoogleSignIn}
+                            disabled={loadingAction !== null}
+                            className="py-2 px-3 rounded-xl text-xs font-semibold bg-white text-[#1A1815] hover:bg-[#F1ECE5] border border-[#DDD5C9] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            title="Ingresar con la cuenta Google oficial (tinoykz@gmail.com)"
+                          >
+                            <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
+                              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                            </svg>
+                            <span>Google OAuth</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Formulario Manual para Credenciales de Staff */}
+              <div className="bg-white border border-[#DDD5C9] rounded-2xl p-4 shadow-2xs space-y-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#1A1815]">
+                  <Key className="w-3.5 h-3.5 text-[#B5654A]" />
+                  <span>Validar Credenciales Manualmente</span>
+                </div>
+
+                <form onSubmit={handleStaffCustomLogin} className="space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#6B655C] mb-1">
+                        DNI o Correo Staff:
+                      </label>
+                      <input
+                        type="text"
+                        value={staffLoginIdentifier}
+                        onChange={(e) => setStaffLoginIdentifier(e.target.value)}
+                        placeholder="Ej: 70112233 o tinoykz@gmail.com"
+                        className="w-full bg-[#FAF8F5] border border-[#DDD5C9] rounded-xl px-3 py-2 text-xs text-[#1A1815] focus:outline-hidden focus:border-[#B5654A]"
+                      />
                     </div>
 
                     <div>
-                      {loadingAction === staff.id ? (
-                        <span className="text-xs font-medium text-[#B5654A] animate-pulse">
-                          Conectando...
-                        </span>
-                      ) : (
-                        <ArrowRight
-                          className={`w-4 h-4 transition-all group-hover:translate-x-1 ${
-                            isOwnerDev ? 'text-[#B5654A]' : 'text-[#6B655C] group-hover:text-[#B5654A]'
-                          }`}
+                      <label className="block text-[11px] font-semibold text-[#6B655C] mb-1">
+                        Contraseña Staff:
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showStaffLoginPassword ? 'text' : 'password'}
+                          value={staffLoginPassword}
+                          onChange={(e) => setStaffLoginPassword(e.target.value)}
+                          placeholder="firme2026"
+                          className="w-full bg-[#FAF8F5] border border-[#DDD5C9] rounded-xl px-3 py-2 text-xs text-[#1A1815] focus:outline-hidden focus:border-[#B5654A] pr-8"
                         />
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => setShowStaffLoginPassword(!showStaffLoginPassword)}
+                          className="absolute right-2 top-2.5 text-[#6B655C] hover:text-[#1A1815]"
+                        >
+                          {showStaffLoginPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
                     </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loadingAction !== null}
+                    className="w-full py-2.5 px-3 rounded-xl bg-[#1A1815] hover:bg-[#322C27] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  >
+                    {loadingAction === 'staff_login_custom' ? (
+                      <span>Validando credenciales...</span>
+                    ) : (
+                      <>
+                        <Shield className="w-3.5 h-3.5 text-[#B5654A]" />
+                        <span>Validar e Ingresar al Back-Office</span>
+                      </>
+                    )}
                   </button>
-                );
-              })}
+                </form>
+              </div>
             </div>
           )}
         </div>

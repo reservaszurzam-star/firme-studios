@@ -1105,15 +1105,134 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           {/* 9. SEGURIDAD & AJUSTES */}
           {currentSubTab === 'seguridad' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in">
-              {/* Card 1: Password change */}
+            <div className="space-y-6 animate-in fade-in">
+              {/* Card 0: Staff Accounts Overview */}
               <div className="bg-[#FAF8F5] border border-[#E4DED4] rounded-2xl p-6 shadow-xs">
-                <div className="flex items-center gap-2 mb-2">
-                  <Key className="w-4 h-4 text-[#B5654A]" />
-                  <h2 className="font-fraunces text-lg font-medium text-[#1A1815]">
-                    Seguridad de Acceso
-                  </h2>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-[#B5654A]" />
+                    <h2 className="font-fraunces text-xl font-medium text-[#1A1815]">
+                      Cuentas Oficiales del Equipo Staff (Owner & Admins)
+                    </h2>
+                  </div>
+                  <span className="text-[11px] text-[#6B655C]">
+                    Clave de acceso predeterminada: <strong className="text-[#B5654A] font-mono">firme2026</strong>
+                  </span>
                 </div>
+
+                <p className="text-xs text-[#6B655C] mb-5 leading-relaxed">
+                  Perfiles configurados para la gestión operativa y técnica del estudio. Cada cuenta tiene permisos adaptados a su rol en la sede SJL.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {PREDEFINED_STAFF.map((staff) => {
+                    const isOwnerDev = staff.role === 'owner_dev';
+                    const isCurrent = currentUser?.id === staff.id || (isOwnerDev && currentUser?.role === 'owner_dev');
+                    return (
+                      <div
+                        key={staff.id}
+                        className={`p-4 rounded-2xl border flex flex-col justify-between transition-all ${
+                          isCurrent
+                            ? 'bg-[#1A1815] text-[#FAF8F5] border-[#B5654A] shadow-md'
+                            : 'bg-white border-[#DDD5C9] text-[#1A1815]'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-3 mb-3">
+                            <img
+                              src={staff.avatar}
+                              alt={staff.name}
+                              className={`w-12 h-12 rounded-full object-cover border-2 shrink-0 ${
+                                isOwnerDev ? 'border-[#B5654A]' : 'border-[#DDD5C9]'
+                              }`}
+                            />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h3 className={`font-semibold text-sm truncate ${isCurrent ? 'text-[#FAF8F5]' : 'text-[#1A1815]'}`}>
+                                  {staff.name}
+                                </h3>
+                                <span
+                                  className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-sm border ${
+                                    isOwnerDev
+                                      ? 'bg-[#B5654A] text-white border-[#B5654A]'
+                                      : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                                  }`}
+                                >
+                                  {isOwnerDev ? 'Owner Dev' : 'Admin'}
+                                </span>
+                              </div>
+                              <p className={`text-[10px] mt-0.5 font-medium ${isCurrent ? 'text-[#B5654A]' : 'text-[#8C8479]'}`}>
+                                {staff.roleTitle}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className={`text-xs space-y-1 py-2 px-3 rounded-xl mb-3 ${isCurrent ? 'bg-[#2E2823]' : 'bg-[#FAF8F5]'}`}>
+                            <div className="truncate">
+                              <span className="opacity-70">Email:</span>{' '}
+                              <strong className="font-mono text-[11px]">{staff.email}</strong>
+                            </div>
+                            {staff.secondaryEmail && (
+                              <div className="truncate">
+                                <span className="opacity-70">Secundario:</span>{' '}
+                                <strong className="font-mono text-[11px]">{staff.secondaryEmail}</strong>
+                              </div>
+                            )}
+                            <div>
+                              <span className="opacity-70">DNI:</span>{' '}
+                              <strong className="font-mono text-[11px]">{staff.dni}</strong>
+                            </div>
+                            <div>
+                              <span className="opacity-70">Celular:</span>{' '}
+                              <strong className="text-[11px]">{staff.phone}</strong>
+                            </div>
+                            <div>
+                              <span className="opacity-70">Clave inicial:</span>{' '}
+                              <strong className="font-mono text-[11px] text-[#B5654A]">{staff.defaultPassword || 'firme2026'}</strong>
+                            </div>
+                          </div>
+
+                          <p className={`text-[10px] mb-4 leading-snug ${isCurrent ? 'text-[#C9C3BA]' : 'text-[#6B655C]'}`}>
+                            {staff.description}
+                          </p>
+                        </div>
+
+                        <div>
+                          {isCurrent ? (
+                            <div className="w-full py-2 px-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Sesión Activa Ahora</span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleSelectStaffQuickLogin(staff)}
+                              className={`w-full py-2 px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+                                isOwnerDev
+                                  ? 'bg-[#B5654A] hover:bg-[#9A5340] text-white'
+                                  : 'bg-[#1A1815] hover:bg-[#322C27] text-white'
+                              }`}
+                            >
+                              <span>Cambiar a {staff.name}</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Card 1: Password change */}
+                <div className="bg-[#FAF8F5] border border-[#E4DED4] rounded-2xl p-6 shadow-xs">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Key className="w-4 h-4 text-[#B5654A]" />
+                    <h2 className="font-fraunces text-lg font-medium text-[#1A1815]">
+                      Seguridad de Acceso
+                    </h2>
+                  </div>
                 <p className="text-xs text-[#6B655C] mb-4 leading-relaxed">
                   Cambia la contraseña maestra con la que la administración ingresa al panel de FIRME STUDIO.
                 </p>
@@ -1258,8 +1377,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
               </div>
             </div>
-          )}
-          </AdminErrorBoundary>
+          </div>
+        )}
+        </AdminErrorBoundary>
         </main>
       </div>
     </div>
