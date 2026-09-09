@@ -25,6 +25,7 @@ import {
   MapPin,
   Clock,
   ChevronRight,
+  ChevronDown,
   Activity,
   Server,
   Smartphone,
@@ -225,6 +226,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Mobile sidebar state
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  // Staff switcher dropdown state
+  const [staffDropdownOpen, setStaffDropdownOpen] = useState(false);
+
   // Password change state
   const [currentKeyInput, setCurrentKeyInput] = useState('');
   const [newKeyInput, setNewKeyInput] = useState('');
@@ -294,13 +298,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       sessionStorage.setItem('firme_admin_logged', 'true');
       if (!currentUser || currentUser.role === 'client') {
         const defaultStaff: AuthUser = {
-          id: 'staff-soni',
-          name: 'Soni',
-          email: 'soni@firmestudio.pe',
-          role: 'admin',
-          roleTitle: 'Administración Sede SJL',
-          provider: 'manual',
+          id: 'staff-valentino',
+          name: 'Valentino',
+          email: 'tinoykz@gmail.com',
+          role: 'owner_dev',
+          roleTitle: 'Owner / Lead Developer',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+          phone: '+51 981 223 330',
+          dni: '70112233',
+          provider: 'google',
           creditsLeft: 99,
+          experienceLevel: 'Avanzado',
+          healthConditions: ['Ninguna'],
         };
         localStorage.setItem('firme_auth_user', JSON.stringify(defaultStaff));
         if (onUpdateCurrentUser) onUpdateCurrentUser(defaultStaff);
@@ -920,26 +929,98 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <span>Caja: {cashRegister.isOpen ? 'Abierta' : 'Cerrada'}</span>
             </button>
 
-            {/* Active Staff Identity in Topbar */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-white border-[#DDD5C9] shadow-xs">
-              <Shield className={`w-3.5 h-3.5 ${isOwnerDev ? 'text-[#B5654A]' : 'text-emerald-700'}`} />
-              <div className="flex flex-col text-left">
-                <span className="text-xs font-bold text-[#1A1815] leading-none">
-                  {currentUser?.name || (isOwnerDev ? 'Valentino' : 'Soni')}
-                </span>
-                <span className="text-[10px] text-[#6B655C] leading-tight">
-                  {currentUser?.roleTitle || (isOwnerDev ? 'Owner Dev' : 'Administración')}
-                </span>
-              </div>
-              <span
-                className={`text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-xs ml-0.5 ${
-                  isOwnerDev
-                    ? 'bg-[#B5654A] text-white'
-                    : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                }`}
+            {/* Active Staff Identity & 1-Click Switcher in Topbar */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setStaffDropdownOpen(!staffDropdownOpen)}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-white hover:bg-[#FAF8F5] border-[#DDD5C9] hover:border-[#B5654A] shadow-xs cursor-pointer transition-all"
+                title="Haga clic para cambiar de usuario (Valentino / Soni / Keyla)"
               >
-                {isOwnerDev ? 'OWNER DEV' : 'ADMIN'}
-              </span>
+                <Shield className={`w-3.5 h-3.5 ${isOwnerDev ? 'text-[#B5654A]' : 'text-emerald-700'}`} />
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-bold text-[#1A1815] leading-none">
+                    {currentUser?.name || (isOwnerDev ? 'Valentino' : 'Soni')}
+                  </span>
+                  <span className="text-[10px] text-[#6B655C] leading-tight">
+                    {currentUser?.roleTitle || (isOwnerDev ? 'Owner / Lead Developer' : 'Administración Sede SJL')}
+                  </span>
+                </div>
+                <span
+                  className={`text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-xs ml-0.5 ${
+                    isOwnerDev
+                      ? 'bg-[#B5654A] text-white'
+                      : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                  }`}
+                >
+                  {isOwnerDev ? 'OWNER DEV' : 'ADMIN'}
+                </span>
+                <ChevronDown className="w-3 h-3 text-[#6B655C]" />
+              </button>
+
+              {staffDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-[#DDD5C9] rounded-2xl shadow-2xl p-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#6B655C] border-b border-[#E4DED4] mb-1.5 flex items-center justify-between">
+                    <span>Cambiar Usuario Activo</span>
+                    <span className="text-[9px] text-[#B5654A]">3 Perfiles</span>
+                  </div>
+                  <div className="space-y-1">
+                    {PREDEFINED_STAFF.map((staff) => {
+                      const isSelected =
+                        currentUser?.email?.toLowerCase() === staff.email.toLowerCase() ||
+                        currentUser?.name?.toLowerCase() === staff.name.toLowerCase() ||
+                        currentUser?.dni === staff.dni;
+                      return (
+                        <button
+                          key={staff.id}
+                          type="button"
+                          onClick={() => {
+                            handleSelectStaffQuickLogin(staff);
+                            setStaffDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer text-xs ${
+                            isSelected
+                              ? 'bg-[#FAF2E8] border border-[#B5654A]/30 font-semibold text-[#1A1815]'
+                              : 'hover:bg-[#FAF8F5] border border-transparent text-[#6B655C] hover:text-[#1A1815]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img
+                              src={staff.avatar}
+                              alt={staff.name}
+                              className="w-7 h-7 rounded-full object-cover border border-[#DDD5C9] shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-bold text-xs leading-tight text-[#1A1815] truncate">
+                                {staff.name}
+                              </div>
+                              <div className="text-[10px] text-[#6B655C] leading-tight truncate">
+                                {staff.roleTitle}
+                              </div>
+                            </div>
+                          </div>
+                          {isSelected ? (
+                            <span className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Activo</span>
+                            </span>
+                          ) : (
+                            <span
+                              className={`shrink-0 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-xs ${
+                                staff.role === 'owner_dev'
+                                  ? 'bg-[#B5654A] text-white'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}
+                            >
+                              {staff.role === 'owner_dev' ? 'Owner' : 'Admin'}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* QR Mostrador Button */}
