@@ -237,7 +237,103 @@ export interface BookingModalData {
   waitlistPosition?: number;
 }
 
-export type UserRole = 'owner_dev' | 'admin' | 'client';
+export type UserRole = 'owner_dev' | 'admin' | 'instructor' | 'client';
+
+export interface RoleDefinition {
+  id: UserRole;
+  name: string;
+  description: string;
+  badgeLabel: string;
+  canSwitchAccounts: boolean;
+  canAccessBackend: boolean;
+  canAccessAdminPanel: boolean;
+  canManageCashRegister: boolean;
+  canManageSchedule: boolean;
+  canCheckInClients: boolean;
+  allowedViews: string[];
+}
+
+export const ROLE_DEFINITIONS: Record<UserRole, RoleDefinition> = {
+  owner_dev: {
+    id: 'owner_dev',
+    name: 'Owner & Lead Developer',
+    description: 'Control absoluto del sistema, infraestructura, base de datos, APIs y alternancia exclusiva entre perfiles.',
+    badgeLabel: 'OWNER DEV',
+    canSwitchAccounts: true,
+    canAccessBackend: true,
+    canAccessAdminPanel: true,
+    canManageCashRegister: true,
+    canManageSchedule: true,
+    canCheckInClients: true,
+    allowedViews: ['owner_dev', 'admin', 'instructor', 'client'],
+  },
+  admin: {
+    id: 'admin',
+    name: 'Administración de Sede',
+    description: 'Gestión operativa diaria: agenda de 8 camas reformer, caja diaria, WhatsApp, cobros y clientes.',
+    badgeLabel: 'ADMIN',
+    canSwitchAccounts: false,
+    canAccessBackend: false,
+    canAccessAdminPanel: true,
+    canManageCashRegister: true,
+    canManageSchedule: true,
+    canCheckInClients: true,
+    allowedViews: ['admin', 'instructor', 'client'],
+  },
+  instructor: {
+    id: 'instructor',
+    name: 'Instructora Reformer',
+    description: 'Control en sala de clases: visualización de alumnas por cama, notas médicas y asistencia.',
+    badgeLabel: 'INSTRUCTORA',
+    canSwitchAccounts: false,
+    canAccessBackend: false,
+    canAccessAdminPanel: false,
+    canManageCashRegister: false,
+    canManageSchedule: false,
+    canCheckInClients: true,
+    allowedViews: ['instructor', 'client'],
+  },
+  client: {
+    id: 'client',
+    name: 'Alumna / Estudiante',
+    description: 'Reserva de clases reformer, adquisición de planes/membresías, créditos disponibles y nivel.',
+    badgeLabel: 'ALUMNA',
+    canSwitchAccounts: false,
+    canAccessBackend: false,
+    canAccessAdminPanel: false,
+    canManageCashRegister: false,
+    canManageSchedule: false,
+    canCheckInClients: false,
+    allowedViews: ['client'],
+  },
+};
+
+export function isOwner(role?: UserRole): boolean {
+  return role === 'owner_dev';
+}
+
+export function isAdmin(role?: UserRole): boolean {
+  return role === 'admin';
+}
+
+export function isInstructor(role?: UserRole): boolean {
+  return role === 'instructor';
+}
+
+export function isClient(role?: UserRole): boolean {
+  return role === 'client' || !role;
+}
+
+export function canSwitchAccount(role?: UserRole): boolean {
+  return role === 'owner_dev';
+}
+
+export function getRoleDefinition(role?: UserRole): RoleDefinition {
+  if (!role || !ROLE_DEFINITIONS[role]) {
+    return ROLE_DEFINITIONS.client;
+  }
+  return ROLE_DEFINITIONS[role];
+}
 
 export interface StaffAccount {
   id: string;
@@ -334,6 +430,16 @@ export function determineUserRole(
     normEmail === 'keyla@firmestudio.pe'
   ) {
     return { role: 'admin', roleTitle: 'Administración & Operaciones' };
+  }
+
+  // INSTRUCTOR: Instructora o Profesora
+  if (
+    normEmail.includes('profesora') ||
+    normEmail.includes('instructor') ||
+    normName.includes('instructora') ||
+    normName.includes('profesora')
+  ) {
+    return { role: 'instructor', roleTitle: 'Instructora Reformer' };
   }
 
   return { role: 'client', roleTitle: 'Alumna' };

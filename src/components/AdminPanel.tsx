@@ -11,6 +11,7 @@ import {
   BarChart3,
   Settings,
   Unlock,
+  Lock,
   Key,
   Eye,
   EyeOff,
@@ -264,6 +265,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   const handleSelectStaffQuickLogin = (staff: StaffAccount) => {
+    // Restriccion estricta: Solo el Owner Dev (Valentino) puede alternar cuentas
+    if (isAuthenticated && !isOwnerDev) {
+      showNotification('Acceso denegado: Solo el Owner tiene autorizacion para alternar entre cuentas.');
+      return;
+    }
+
     const authUser: AuthUser = {
       id: staff.id,
       name: staff.name,
@@ -929,96 +936,112 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <span>Caja: {cashRegister.isOpen ? 'Abierta' : 'Cerrada'}</span>
             </button>
 
-            {/* Active Staff Identity & 1-Click Switcher in Topbar */}
+            {/* Active Staff Identity & 1-Click Switcher in Topbar (Exclusivo Owner) */}
             <div className="relative">
-              <button
-                type="button"
-                onClick={() => setStaffDropdownOpen(!staffDropdownOpen)}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-white hover:bg-[#FAF8F5] border-[#DDD5C9] hover:border-[#B5654A] shadow-xs cursor-pointer transition-all"
-                title="Haga clic para cambiar de usuario (Valentino / Soni / Keyla)"
-              >
-                <Shield className={`w-3.5 h-3.5 ${isOwnerDev ? 'text-[#B5654A]' : 'text-emerald-700'}`} />
-                <div className="flex flex-col text-left">
-                  <span className="text-xs font-bold text-[#1A1815] leading-none">
-                    {currentUser?.name || (isOwnerDev ? 'Valentino' : 'Soni')}
-                  </span>
-                  <span className="text-[10px] text-[#6B655C] leading-tight">
-                    {currentUser?.roleTitle || (isOwnerDev ? 'Owner / Lead Developer' : 'Administración Sede SJL')}
-                  </span>
-                </div>
-                <span
-                  className={`text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-xs ml-0.5 ${
-                    isOwnerDev
-                      ? 'bg-[#B5654A] text-white'
-                      : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                  }`}
-                >
-                  {isOwnerDev ? 'OWNER DEV' : 'ADMIN'}
-                </span>
-                <ChevronDown className="w-3 h-3 text-[#6B655C]" />
-              </button>
+              {isOwnerDev ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setStaffDropdownOpen(!staffDropdownOpen)}
+                    className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-white hover:bg-[#FAF8F5] border-[#DDD5C9] hover:border-[#B5654A] shadow-xs cursor-pointer transition-all"
+                    title="Alternar usuario activo (Exclusivo Owner Dev)"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-[#B5654A]" />
+                    <div className="flex flex-col text-left">
+                      <span className="text-xs font-bold text-[#1A1815] leading-none">
+                        {currentUser?.name || 'Valentino'}
+                      </span>
+                      <span className="text-[10px] text-[#6B655C] leading-tight">
+                        {currentUser?.roleTitle || 'Owner / Lead Developer'}
+                      </span>
+                    </div>
+                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-xs ml-0.5 bg-[#B5654A] text-white">
+                      OWNER DEV
+                    </span>
+                    <ChevronDown className="w-3 h-3 text-[#6B655C]" />
+                  </button>
 
-              {staffDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border border-[#DDD5C9] rounded-2xl shadow-2xl p-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#6B655C] border-b border-[#E4DED4] mb-1.5 flex items-center justify-between">
-                    <span>Cambiar Usuario Activo</span>
-                    <span className="text-[9px] text-[#B5654A]">3 Perfiles</span>
-                  </div>
-                  <div className="space-y-1">
-                    {PREDEFINED_STAFF.map((staff) => {
-                      const isSelected =
-                        currentUser?.email?.toLowerCase() === staff.email.toLowerCase() ||
-                        currentUser?.name?.toLowerCase() === staff.name.toLowerCase() ||
-                        currentUser?.dni === staff.dni;
-                      return (
-                        <button
-                          key={staff.id}
-                          type="button"
-                          onClick={() => {
-                            handleSelectStaffQuickLogin(staff);
-                            setStaffDropdownOpen(false);
-                          }}
-                          className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer text-xs ${
-                            isSelected
-                              ? 'bg-[#FAF2E8] border border-[#B5654A]/30 font-semibold text-[#1A1815]'
-                              : 'hover:bg-[#FAF8F5] border border-transparent text-[#6B655C] hover:text-[#1A1815]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <img
-                              src={staff.avatar}
-                              alt={staff.name}
-                              className="w-7 h-7 rounded-full object-cover border border-[#DDD5C9] shrink-0"
-                            />
-                            <div className="min-w-0">
-                              <div className="font-bold text-xs leading-tight text-[#1A1815] truncate">
-                                {staff.name}
-                              </div>
-                              <div className="text-[10px] text-[#6B655C] leading-tight truncate">
-                                {staff.roleTitle}
-                              </div>
-                            </div>
-                          </div>
-                          {isSelected ? (
-                            <span className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              <span>Activo</span>
-                            </span>
-                          ) : (
-                            <span
-                              className={`shrink-0 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-xs ${
-                                staff.role === 'owner_dev'
-                                  ? 'bg-[#B5654A] text-white'
-                                  : 'bg-emerald-100 text-emerald-800'
+                  {staffDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-72 bg-white border border-[#DDD5C9] rounded-2xl shadow-2xl p-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                      <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#6B655C] border-b border-[#E4DED4] mb-1.5 flex items-center justify-between">
+                        <span>Cambiar Usuario Activo (Owner)</span>
+                        <span className="text-[9px] text-[#B5654A]">3 Perfiles</span>
+                      </div>
+                      <div className="space-y-1">
+                        {PREDEFINED_STAFF.map((staff) => {
+                          const isSelected =
+                            currentUser?.email?.toLowerCase() === staff.email.toLowerCase() ||
+                            currentUser?.name?.toLowerCase() === staff.name.toLowerCase() ||
+                            currentUser?.dni === staff.dni;
+                          return (
+                            <button
+                              key={staff.id}
+                              type="button"
+                              onClick={() => {
+                                handleSelectStaffQuickLogin(staff);
+                                setStaffDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer text-xs ${
+                                isSelected
+                                  ? 'bg-[#FAF2E8] border border-[#B5654A]/30 font-semibold text-[#1A1815]'
+                                  : 'hover:bg-[#FAF8F5] border border-transparent text-[#6B655C] hover:text-[#1A1815]'
                               }`}
                             >
-                              {staff.role === 'owner_dev' ? 'Owner' : 'Admin'}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <img
+                                  src={staff.avatar}
+                                  alt={staff.name}
+                                  className="w-7 h-7 rounded-full object-cover border border-[#DDD5C9] shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <div className="font-bold text-xs leading-tight text-[#1A1815] truncate">
+                                    {staff.name}
+                                  </div>
+                                  <div className="text-[10px] text-[#6B655C] leading-tight truncate">
+                                    {staff.roleTitle}
+                                  </div>
+                                </div>
+                              </div>
+                              {isSelected ? (
+                                <span className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Activo</span>
+                                </span>
+                              ) : (
+                                <span
+                                  className={`shrink-0 text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-xs ${
+                                    staff.role === 'owner_dev'
+                                      ? 'bg-[#B5654A] text-white'
+                                      : 'bg-emerald-100 text-emerald-800'
+                                  }`}
+                                >
+                                  {staff.role === 'owner_dev' ? 'Owner' : 'Admin'}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div
+                  className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-white border-[#DDD5C9] shadow-xs select-none"
+                  title="Sesión fija asignada a administración (Cambio de cuenta restringido al Owner)"
+                >
+                  <Shield className="w-3.5 h-3.5 text-emerald-700" />
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-[#1A1815] leading-none">
+                      {currentUser?.name || 'Administración'}
+                    </span>
+                    <span className="text-[10px] text-[#6B655C] leading-tight">
+                      {currentUser?.roleTitle || 'Administración Sede SJL'}
+                    </span>
                   </div>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-xs ml-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    ADMIN
+                  </span>
                 </div>
               )}
             </div>
@@ -1202,13 +1225,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
 
                 <p className="text-xs text-[#6B655C] mb-5 leading-relaxed">
-                  Perfiles configurados para la gestión operativa y técnica del estudio. Cada cuenta tiene permisos adaptados a su rol en la sede SJL.
+                  Perfiles configurados para la gestión operativa y técnica del estudio. El cambio entre cuentas está reservado exclusivamente para el perfil Owner (Valentino). Las administradoras disponen de una sesión fija asignada.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {PREDEFINED_STAFF.map((staff) => {
-                    const isOwnerDev = staff.role === 'owner_dev';
-                    const isCurrent = currentUser?.id === staff.id || (isOwnerDev && currentUser?.role === 'owner_dev');
+                    const isStaffOwnerDev = staff.role === 'owner_dev';
+                    const isCurrent =
+                      currentUser?.id === staff.id ||
+                      (isStaffOwnerDev && isOwnerDev) ||
+                      currentUser?.email?.toLowerCase() === staff.email.toLowerCase() ||
+                      currentUser?.dni === staff.dni;
                     return (
                       <div
                         key={staff.id}
@@ -1224,7 +1251,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               src={staff.avatar}
                               alt={staff.name}
                               className={`w-12 h-12 rounded-full object-cover border-2 shrink-0 ${
-                                isOwnerDev ? 'border-[#B5654A]' : 'border-[#DDD5C9]'
+                                isStaffOwnerDev ? 'border-[#B5654A]' : 'border-[#DDD5C9]'
                               }`}
                             />
                             <div className="min-w-0">
@@ -1234,12 +1261,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 </h3>
                                 <span
                                   className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-sm border ${
-                                    isOwnerDev
+                                    isStaffOwnerDev
                                       ? 'bg-[#B5654A] text-white border-[#B5654A]'
                                       : 'bg-emerald-100 text-emerald-800 border-emerald-300'
                                   }`}
                                 >
-                                  {isOwnerDev ? 'Owner Dev' : 'Admin'}
+                                  {isStaffOwnerDev ? 'Owner Dev' : 'Admin'}
                                 </span>
                               </div>
                               <p className={`text-[10px] mt-0.5 font-medium ${isCurrent ? 'text-[#B5654A]' : 'text-[#8C8479]'}`}>
@@ -1284,19 +1311,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                               <span>Sesión Activa Ahora</span>
                             </div>
-                          ) : (
+                          ) : isOwnerDev ? (
                             <button
                               type="button"
                               onClick={() => handleSelectStaffQuickLogin(staff)}
-                              className={`w-full py-2 px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
-                                isOwnerDev
-                                  ? 'bg-[#B5654A] hover:bg-[#9A5340] text-white'
-                                  : 'bg-[#1A1815] hover:bg-[#322C27] text-white'
-                              }`}
+                              className="w-full py-2 px-3 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 bg-[#B5654A] hover:bg-[#9A5340] text-white"
                             >
                               <span>Cambiar a {staff.name}</span>
                               <ChevronRight className="w-3.5 h-3.5" />
                             </button>
+                          ) : (
+                            <div className="w-full py-2 px-3 rounded-xl bg-[#F0ECE1] border border-[#DDD5C9] text-[#8C8479] text-xs font-medium flex items-center justify-center gap-1.5 select-none">
+                              <Lock className="w-3.5 h-3.5 text-[#8C8479]" />
+                              <span>Solo Owner puede alternar</span>
+                            </div>
                           )}
                         </div>
                       </div>
