@@ -17,6 +17,7 @@ import { Footer } from './components/Footer';
 import { BookingModal } from './components/BookingModal';
 import { GoogleAuthModal } from './components/GoogleAuthModal';
 import { ClientCheckInModal } from './components/ClientCheckInModal';
+import { EditProfileModal } from './components/EditProfileModal';
 import { PlanCheckoutModal } from './components/PlanCheckoutModal';
 import { StudentLevelModal } from './components/StudentLevelModal';
 import { StudentProgressTab } from './components/StudentProgressTab';
@@ -315,6 +316,7 @@ export default function App() {
     return null;
   });
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isGoogleAuthOpen, setIsGoogleAuthOpen] = useState(false);
   const [authInitialModality, setAuthInitialModality] = useState<'qr' | 'manual' | 'whatsapp' | 'receptionist' | 'register' | 'login'>('manual');
   const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
@@ -444,6 +446,33 @@ export default function App() {
     });
     setTimeout(() => setToast(null), 4500);
     return true;
+  };
+
+  const handleSaveProfile = (updatedUser: AuthUser) => {
+    setCurrentUser(updatedUser);
+    localStorage.setItem('firme_auth_user', JSON.stringify(updatedUser));
+    setToast({
+      title: 'Perfil Actualizado',
+      message: 'Tus datos personales y ficha de salud se guardaron exitosamente.',
+    });
+    setTimeout(() => setToast(null), 3500);
+
+    // Sincronización en Supabase si está disponible
+    if (isSupabaseConfigured() && updatedUser.role === 'client') {
+      supabaseService.saveClientProfile({
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone || '',
+        dni: updatedUser.dni || '',
+        planName: updatedUser.planName || 'Pase Regular',
+        creditsLeft: updatedUser.creditsLeft ?? 0,
+        experienceLevel: updatedUser.experienceLevel || 'Principiante',
+        healthConditions: updatedUser.healthConditions || ['Ninguna'],
+        medicalNotes: updatedUser.medicalNotes || '',
+        emergencyContact: updatedUser.emergencyContact || '',
+        emergencyPhone: updatedUser.emergencyPhone || '',
+      }).catch((err) => console.warn('Supabase profile sync warning:', err));
+    }
   };
 
   const handleGoogleAuthSuccess = (user: AuthUser) => {
@@ -1437,6 +1466,7 @@ export default function App() {
         onOpenKioskModal={() => setIsKioskModalOpen(true)}
         onOpenBiomechanicsQuiz={() => setIsBiomechanicsQuizOpen(true)}
         onOpenQrModal={() => setIsQrModalOpen(true)}
+        onOpenEditProfile={() => setIsEditProfileOpen(true)}
       />
 
       {/* 2. MAIN INDEPENDENT TAB CONTENT PANELS */}
@@ -1722,6 +1752,18 @@ export default function App() {
         }}
         onLogout={handleLogout}
         onPerformCheckIn={handlePerformCheckIn}
+        onOpenEditProfile={() => {
+          setIsCheckInModalOpen(false);
+          setIsEditProfileOpen(true);
+        }}
+      />
+
+      {/* MODAL DE EDICION DE DATOS DEL PERFIL & SALUD */}
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        currentUser={currentUser}
+        onSave={handleSaveProfile}
       />
 
       {/* CENTRO UNIFICADO DE REGISTRO & ACCESO 4-EN-1 (QR, SMARTFIT, WHATSAPP, COUNTER) */}

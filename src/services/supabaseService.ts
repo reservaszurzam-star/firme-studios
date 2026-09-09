@@ -680,6 +680,33 @@ export const supabaseService = {
     }
   },
 
+  async saveClientProfile(profile: Partial<AuthUser>): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      await supabase.from('clients').upsert(
+        {
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          dni: profile.dni,
+          current_plan: profile.planName,
+          credits_left: profile.creditsLeft,
+          status: 'activo',
+          emergency_contact: profile.emergencyContact,
+          emergency_phone: profile.emergencyPhone,
+          medical_notes: profile.medicalNotes,
+          document_type: profile.documentType,
+          birth_date: profile.birthDate,
+          gender: profile.gender,
+        },
+        { onConflict: 'dni' }
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   async signOut(): Promise<void> {
     if (supabase) {
       try {

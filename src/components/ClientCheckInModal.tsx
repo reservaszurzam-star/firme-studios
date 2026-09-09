@@ -14,6 +14,7 @@ import {
   MapPin,
   Layers,
   ArrowRight,
+  Edit3,
 } from 'lucide-react';
 import { AuthUser, BookingRecord } from '../types';
 
@@ -25,6 +26,7 @@ interface ClientCheckInModalProps {
   onOpenGoogleAuth: () => void;
   onLogout: () => void;
   onPerformCheckIn: (bookingId: string) => void;
+  onOpenEditProfile?: () => void;
 }
 
 export const ClientCheckInModal: React.FC<ClientCheckInModalProps> = ({
@@ -35,6 +37,7 @@ export const ClientCheckInModal: React.FC<ClientCheckInModalProps> = ({
   onOpenGoogleAuth,
   onLogout,
   onPerformCheckIn,
+  onOpenEditProfile,
 }) => {
   const [activeTab, setActiveTab] = useState<'checkin' | 'perfil' | 'salud'>('checkin');
   const [checkInSuccessId, setCheckInSuccessId] = useState<string | null>(null);
@@ -181,14 +184,28 @@ export const ClientCheckInModal: React.FC<ClientCheckInModalProps> = ({
                 </div>
               </div>
 
-              <button
-                onClick={onLogout}
-                className="p-2 text-[#6B655C] hover:text-[#9A5340] hover:bg-[#F1ECE5] rounded-md transition-colors text-xs flex items-center gap-1"
-                title="Cerrar sesión"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Salir</span>
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {onOpenEditProfile && (
+                  <button
+                    type="button"
+                    onClick={onOpenEditProfile}
+                    className="px-2.5 py-1.5 text-[#B5654A] hover:text-[#9A5340] bg-[#FAF2E8] hover:bg-[#F5E6D3] rounded-lg transition-colors text-xs font-semibold flex items-center gap-1 cursor-pointer border border-[#B5654A]/30"
+                    title="Editar datos personales, contacto y ficha de salud"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Editar Perfil</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={onLogout}
+                  className="p-1.5 text-[#6B655C] hover:text-[#9A5340] hover:bg-[#F1ECE5] rounded-lg transition-colors text-xs flex items-center gap-1 cursor-pointer"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Salir</span>
+                </button>
+              </div>
             </div>
 
             {/* Subtabs: Check-in express vs Ficha médica */}
